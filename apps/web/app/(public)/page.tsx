@@ -59,9 +59,11 @@ export default async function LandingPage() {
           </a>
         </div>
 
+        {/* Questa frase descrive quello che il modulo fa davvero: nessun account
+            da creare, ma un contatto sì, perché senza non possiamo avvisarti. */}
         <p className="mt-6 max-w-2xl text-small text-ink-muted">
-          Non serve registrarsi per raccontare. Ti chiediamo un contatto solo
-          quando la tua segnalazione diventa un’azione da firmare.
+          Non serve creare un account. Ti chiediamo solo un contatto, per
+          avvisarti quando la tua segnalazione diventa un’azione.
         </p>
       </section>
 

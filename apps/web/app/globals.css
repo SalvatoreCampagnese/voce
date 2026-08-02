@@ -1,5 +1,13 @@
 @import 'tailwindcss';
 
+/* Il design system sta in un pacchetto separato del monorepo.
+   Tailwind v4 rileva da solo i sorgenti dell'applicazione, ma IGNORA
+   node_modules — e @voce/ui è raggiunto proprio da lì, via link di workspace.
+   Senza questa riga nessuna classe usata dentro packages/ui genera CSS: i
+   componenti escono senza stile e un bottone primario diventa testo bianco su
+   fondo bianco, cioè invisibile. */
+@source "../../../packages/ui/src";
+
 /* ===========================================================================
    VOCE — design token
    Riproduzione dei token di Bootstrap Italia / Designers Italia.
@@ -177,5 +185,73 @@
 
   .skip-link:focus {
     top: 0.5rem;
+  }
+
+  /* Corpo di un atto reso da markdown.
+     Il plugin @tailwindcss/typography non è installato e il contratto vieta di
+     aggiungere dipendenze: sono una ventina di righe, si scrivono a mano. */
+  .prose-voce {
+    max-width: 68ch;
+    color: var(--color-ink);
+  }
+  .prose-voce h1,
+  .prose-voce h2,
+  .prose-voce h3 {
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+    font-weight: 700;
+  }
+  .prose-voce h1 {
+    font-size: var(--text-h2);
+  }
+  .prose-voce h2 {
+    font-size: var(--text-h3);
+  }
+  .prose-voce h3 {
+    font-size: var(--text-h4);
+  }
+  .prose-voce p,
+  .prose-voce ul,
+  .prose-voce ol,
+  .prose-voce blockquote {
+    margin-bottom: 1rem;
+    line-height: 1.7;
+  }
+  .prose-voce ul,
+  .prose-voce ol {
+    padding-left: 1.5rem;
+  }
+  .prose-voce ul {
+    list-style: disc;
+  }
+  .prose-voce ol {
+    list-style: decimal;
+  }
+  .prose-voce li {
+    margin-bottom: 0.375rem;
+  }
+  .prose-voce strong {
+    font-weight: 700;
+  }
+  .prose-voce blockquote {
+    border-left: 4px solid var(--color-surface-strong);
+    padding-left: 1rem;
+    color: var(--color-ink-muted);
+  }
+  .prose-voce a {
+    color: var(--color-primary-600);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .prose-voce table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+  }
+  .prose-voce th,
+  .prose-voce td {
+    border: 1px solid var(--color-surface-strong);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
   }
 }
