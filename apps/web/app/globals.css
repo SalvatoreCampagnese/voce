@@ -1,0 +1,181 @@
+@import 'tailwindcss';
+
+/* ===========================================================================
+   VOCE — design token
+   Riproduzione dei token di Bootstrap Italia / Designers Italia.
+
+   Tailwind v4: i token si dichiarano QUI, in @theme. Non esiste
+   tailwind.config.ts in questo progetto (PLAN.md §3.1 assume Tailwind v3).
+   Ogni variabile genera le utility corrispondenti:
+   --color-primary-500 → bg-primary-500, text-primary-500, border-primary-500
+
+   I rapporti di contrasto in commento sono calcolati su #FFFFFF salvo diversa
+   indicazione. Soglie WCAG 2.1 AA: 4.5:1 testo normale, 3:1 testo grande e
+   bordi di controlli interattivi.
+   =========================================================================== */
+
+@theme {
+  /* --- Blu Italia ------------------------------------------------------- */
+  --color-primary-50: #e6f1fb;
+  --color-primary-100: #cce3f7;
+  --color-primary-200: #99c7ef;
+  --color-primary-300: #66abe7;
+  --color-primary-400: #338fdf;
+  --color-primary-500: #0066cc; /* 5.57 — colore istituzionale */
+  --color-primary-600: #0059b3; /* 6.82 */
+  --color-primary-700: #004080; /* 10.27 */
+  --color-primary-800: #00264d;
+  --color-primary-900: #001a33;
+
+  /* --- Testo ------------------------------------------------------------ */
+  --color-ink: #17324d; /* 13.13 */
+  --color-ink-muted: #5c6f82; /* 5.18 · 4.75 su surface-alt */
+  /* PLAN.md §3.1 propone #A5B4C0 per ink-subtle: 2.12, sotto ogni soglia.
+     Non è utilizzabile per testo. Scurito a 4.73 mantenendo il tono freddo. */
+  --color-ink-subtle: #68757f; /* 4.73 · 4.34 su surface-alt */
+
+  /* --- Superfici -------------------------------------------------------- */
+  --color-surface: #ffffff;
+  --color-surface-alt: #f5f5f5;
+  --color-surface-strong: #e3e4e6; /* 1.27 — SOLO separatori decorativi */
+  --color-surface-dark: #17324d;
+
+  /* Bordo dei controlli interattivi (input, select, bottoni secondari).
+     WCAG 1.4.11 chiede 3:1 per i contorni che veicolano l'esistenza di un
+     controllo: surface-strong non basta, serve questo. */
+  --color-border-control: #8a96a3; /* 3.01 */
+
+  /* --- Semantica -------------------------------------------------------- */
+  --color-success: #008758; /* 4.56 */
+  --color-warning: #a66300; /* 4.77 */
+  --color-danger: #d9364f; /* 4.57 · bianco su danger 4.57 */
+  --color-info: #5c6f82; /* 5.18 */
+
+  --color-success-bg: #e8f5ef;
+  --color-warning-bg: #fdf4e4;
+  --color-danger-bg: #fdecef;
+  --color-info-bg: #eef1f4;
+
+  /* --- Accento istituzionale -------------------------------------------- */
+  --color-gold: #b68a35; /* 3.15 — decorativo o testo grande, mai testo normale */
+  --color-gold-text: #8a6825; /* 5.14 — la variante da usare per il testo */
+
+  /* --- Tricolore -------------------------------------------------------- */
+  --color-tricolore-verde: #008c45;
+  --color-tricolore-rosso: #cd212a;
+
+  /* --- Tipografia ------------------------------------------------------- */
+  /* --font-titillium è iniettata da next/font in layout.tsx: il font è
+     self-hostato a build time, nessuna richiesta a Google in produzione. */
+  --font-sans: var(--font-titillium), system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, 'Roboto Mono', monospace;
+
+  --text-display: 3rem;
+  --text-display--line-height: 1.1;
+  --text-display--font-weight: 700;
+  --text-h1: 2.25rem;
+  --text-h1--line-height: 1.2;
+  --text-h1--font-weight: 700;
+  --text-h2: 1.75rem;
+  --text-h2--line-height: 1.25;
+  --text-h2--font-weight: 700;
+  --text-h3: 1.5rem;
+  --text-h3--line-height: 1.3;
+  --text-h3--font-weight: 600;
+  --text-h4: 1.25rem;
+  --text-h4--line-height: 1.35;
+  --text-h4--font-weight: 600;
+  --text-body: 1rem;
+  --text-body--line-height: 1.5;
+  --text-small: 0.875rem;
+  --text-small--line-height: 1.5;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.4;
+
+  /* --- Forma ------------------------------------------------------------ */
+  /* La PA italiana usa raggi contenuti: il pill è riservato ai tag di stato. */
+  --radius-card: 8px;
+  --radius-pill: 999px;
+
+  --shadow-card: 0 2px 8px rgb(23 50 77 / 0.08);
+  --shadow-modal: 0 8px 24px rgb(23 50 77 / 0.16);
+}
+
+/* ===========================================================================
+   Stili di base
+   =========================================================================== */
+
+@layer base {
+  html {
+    /* Un ancoraggio interno non deve nascondere il titolo sotto l'header. */
+    scroll-padding-top: 5rem;
+  }
+
+  body {
+    background-color: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Focus SEMPRE visibile. Non rimuovere l'outline senza sostituirlo con
+     qualcosa di più visibile: è la bussola di chi naviga da tastiera. */
+  :focus-visible {
+    outline: 3px solid var(--color-primary-600);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* Su fondo scuro l'outline blu sparirebbe. */
+  .on-dark :focus-visible {
+    outline-color: #ffffff;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    color: var(--color-ink);
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Chi ha impostato "riduci i movimenti" nel sistema operativo lo ha fatto
+     per un motivo, spesso medico. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Salto al contenuto: primo elemento focusabile della pagina, visibile solo
+     quando riceve il focus. */
+  .skip-link {
+    position: absolute;
+    left: 0.5rem;
+    top: -100%;
+    z-index: 100;
+    background-color: var(--color-primary-700);
+    color: #ffffff;
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    font-weight: 600;
+    transition: top 0.15s ease-in-out;
+  }
+
+  .skip-link:focus {
+    top: 0.5rem;
+  }
+}

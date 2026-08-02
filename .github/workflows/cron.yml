@@ -1,0 +1,49 @@
+# Scheduler esterno per i job frequenti.
+#
+# Perché esiste: su Vercel Hobby una cron expression più frequente di una volta
+# al giorno FA FALLIRE IL DEPLOY (non viene declassata a giornaliera):
+# «Hobby accounts are limited to daily cron jobs.»
+# In apps/web/vercel.json le pianificazioni sono quindi giornaliere, e la
+# frequenza vera la dà questo workflow, che è gratuito sui repo pubblici.
+#
+# Se passi a Vercel Pro: cancella questo file e rimetti in vercel.json
+# "*/15 * * * *" per recluster e "*/10 * * * *" per rescue-reports.
+#
+# Segreti richiesti (Settings → Secrets and variables → Actions):
+#   APP_URL      es. https://voce-civica.vercel.app
+#   CRON_SECRET  lo stesso valore impostato tra le env di Vercel
+
+name: cron
+
+on:
+  schedule:
+    # GitHub Actions non garantisce la puntualità: sotto carico può ritardare
+    # di parecchi minuti. Per VOCE va bene: il ri-raggruppamento non è realtime.
+    - cron: '*/15 * * * *'
+  workflow_dispatch: # esecuzione manuale, utile durante la demo
+
+concurrency:
+  # Due esecuzioni sovrapposte creerebbero gruppi doppi.
+  group: voce-cron
+  cancel-in-progress: false
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Ripesca le segnalazioni rimaste indietro
+        run: |
+          code=$(curl -sS -o /tmp/out.txt -w '%{http_code}' --max-time 120 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/cron/rescue-reports")
+          echo "HTTP $code"; cat /tmp/out.txt
+          test "$code" = "200"
+
+      - name: Ricostruisci i gruppi
+        run: |
+          code=$(curl -sS -o /tmp/out.txt -w '%{http_code}' --max-time 120 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/cron/recluster")
+          echo "HTTP $code"; cat /tmp/out.txt
+          test "$code" = "200"

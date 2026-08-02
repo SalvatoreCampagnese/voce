@@ -1,0 +1,26 @@
+{
+  "name": "voce",
+  "version": "0.1.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "description": "VOCE — il primo sindacato civico automatico",
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@9.15.1",
+  "scripts": {
+    "dev": "pnpm --filter @voce/web dev",
+    "build": "pnpm --filter @voce/web build",
+    "start": "pnpm --filter @voce/web start",
+    "lint": "pnpm --filter @voce/web lint",
+    "typecheck": "pnpm -r --parallel typecheck",
+    "db:start": "supabase start",
+    "db:reset": "supabase db reset",
+    "db:diff": "supabase db diff",
+    "db:types": "supabase gen types typescript --local > packages/db/src/types.ts",
+    "seed": "pnpm --filter @voce/db seed"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

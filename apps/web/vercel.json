@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "regions": ["fra1"],
+  "crons": [
+    { "path": "/api/cron/recluster", "schedule": "5 3 * * *" },
+    { "path": "/api/cron/rescue-reports", "schedule": "20 3 * * *" },
+    { "path": "/api/cron/dossier-refresh", "schedule": "35 3 * * *" },
+    { "path": "/api/cron/notify-signatures", "schedule": "0 9 * * *" }
+  ]
+}
