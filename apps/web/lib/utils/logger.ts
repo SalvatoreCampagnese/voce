@@ -95,6 +95,26 @@ export function serializeError(error: unknown): Record<string, unknown> {
     }
   }
   if (typeof error === 'string') return { message: error }
+
+  // Gli errori di Supabase/PostgREST NON sono istanze di Error: sono oggetti
+  // semplici con message/code/details/hint. Con `String(error)` diventavano
+  // "[object Object]" e la causa vera spariva proprio nei log in cui serviva.
+  if (error !== null && typeof error === 'object') {
+    const o = error as Record<string, unknown>
+    const estratto: Record<string, unknown> = {}
+    for (const campo of ['message', 'code', 'details', 'hint', 'name', 'status']) {
+      if (o[campo] !== undefined) estratto[campo] = o[campo]
+    }
+    if (Object.keys(estratto).length > 0) return estratto
+
+    // Oggetto senza campi noti: meglio il JSON che "[object Object]".
+    try {
+      return { message: JSON.stringify(error).slice(0, 500) }
+    } catch {
+      return { message: Object.prototype.toString.call(error) }
+    }
+  }
+
   return { message: String(error) }
 }
 

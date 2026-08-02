@@ -15,14 +15,14 @@ tua (legale/etica) · ⏱️ quanto ci vuole
 
 ## Prerequisiti
 
-| Cosa | Verifica | Se manca |
-|---|---|---|
-| Node 22+ | `node -v` | <https://nodejs.org> o `nvm install 22` |
-| pnpm 9+ | `pnpm -v` | `npm i -g pnpm` |
-| Docker Desktop | `docker info` | serve **solo** per Supabase in locale (passo 2b) |
-| Supabase CLI | `supabase --version` | `brew install supabase/tap/supabase` |
-| Vercel CLI | `vercel --version` | `npm i -g vercel` |
-| gh CLI | `gh --version` | `brew install gh` (opzionale) |
+| Cosa           | Verifica             | Se manca                                         |
+| -------------- | -------------------- | ------------------------------------------------ |
+| Node 22+       | `node -v`            | <https://nodejs.org> o `nvm install 22`          |
+| pnpm 9+        | `pnpm -v`            | `npm i -g pnpm`                                  |
+| Docker Desktop | `docker info`        | serve **solo** per Supabase in locale (passo 2b) |
+| Supabase CLI   | `supabase --version` | `brew install supabase/tap/supabase`             |
+| Vercel CLI     | `vercel --version`   | `npm i -g vercel`                                |
+| gh CLI         | `gh --version`       | `brew install gh` (opzionale)                    |
 
 Le dipendenze del progetto sono già installate. Se parti da un clone pulito:
 
@@ -99,14 +99,15 @@ dalle migration; se una fallisce, abilitala a mano dal dashboard e ri-esegui.
 
 Dashboard → **Storage** → crea due bucket:
 
-| Bucket | Visibilità | Perché |
-|---|---|---|
-| `media` | **privato** | foto allegate dai cittadini: possono contenere volti e targhe |
-| `dossier` | pubblico | i PDF degli atti sono il prodotto civico, devono essere linkabili |
+| Bucket    | Visibilità  | Perché                                                            |
+| --------- | ----------- | ----------------------------------------------------------------- |
+| `media`   | **privato** | foto allegate dai cittadini: possono contenere volti e targhe     |
+| `dossier` | pubblico    | i PDF degli atti sono il prodotto civico, devono essere linkabili |
 
 ### 1f. Auth
 
 Dashboard → **Authentication → Providers**:
+
 - **Email** attivo, con "Confirm email" **OTP** anziché magic link (l'OTP funziona
   meglio da mobile, dove sta il tuo utente).
 - **Phone** attivo solo quando avrai configurato Twilio (passo 4).
@@ -135,17 +136,17 @@ Telegram è il canale principale: gratuito, senza approvazioni, funziona subito.
 
 1. Su Telegram apri **@BotFather** → `/newbot`
 2. Nome visibile: `VOCE` · username: qualcosa che finisce per `bot`
-   (es. `voce_civica_bot`, se libero)
+   (es. `try_voce_bot`, se libero)
 3. Copia il token → `TELEGRAM_BOT_TOKEN`
 4. Sempre in BotFather, rifinisci il bot:
-   - `/setdescription` → *"Racconta un problema del tuo quartiere. Se non sei da solo,
-     VOCE lo trasforma in un'azione collettiva."*
+   - `/setdescription` → _"Racconta un problema del tuo quartiere. Se non sei da solo,
+     VOCE lo trasforma in un'azione collettiva."_
    - `/setabouttext` → una riga con il link al repo
    - `/setuserpic` → il logo
    - `/setprivacy` → **Enable** (il bot legge solo i messaggi diretti: è il default
      corretto per la privacy)
 
-5. **Registra il webhook** — da fare *dopo* il primo deploy (passo 6), perché serve un
+5. **Registra il webhook** — da fare _dopo_ il primo deploy (passo 6), perché serve un
    URL pubblico in HTTPS:
 
 ```bash
@@ -180,7 +181,7 @@ over 50 in Italia. In MVP si usa la **Sandbox**, gratuita.
    Ti dà un numero (tipo `+1 415 523 8886`) → `TWILIO_WHATSAPP_NUMBER`
    nel formato `whatsapp:+14155238886`.
 4. Nella stessa pagina, tab **Sandbox settings**:
-   - *When a message comes in* → `https://<tuo-dominio>/api/ingest/whatsapp` · `POST`
+   - _When a message comes in_ → `https://<tuo-dominio>/api/ingest/whatsapp` · `POST`
 5. Ogni tester deve mandare **una volta** il codice di join (tipo `join <due-parole>`)
    al numero della sandbox, e ripeterlo **ogni 72 ore**. È il limite della sandbox:
    mettilo in conto per la demo e avvisa i tester la mattina stessa.
@@ -244,19 +245,19 @@ vercel --prod
 Oppure dal dashboard: **Import Git Repository** → seleziona il repo.
 Impostazioni importanti:
 
-| Impostazione | Valore |
-|---|---|
-| Framework | Next.js (rilevato) |
-| Root Directory | `apps/web` |
-| Build Command | lascia il default |
-| Region | `fra1` (già in `vercel.json`) |
-| Node.js Version | 22.x |
+| Impostazione    | Valore                        |
+| --------------- | ----------------------------- |
+| Framework       | Next.js (rilevato)            |
+| Root Directory  | `apps/web`                    |
+| Build Command   | lascia il default             |
+| Region          | `fra1` (già in `vercel.json`) |
+| Node.js Version | 22.x                          |
 
 ### I cron e il piano Hobby — leggi prima di deployare
 
 ⚠️ Su **Hobby**, una pianificazione più frequente di una volta al giorno **fa fallire
 il deploy**. Non viene declassata: il build si interrompe con
-*"Hobby accounts are limited to daily cron jobs"*. Le pianificazioni di `PLAN.md` §8
+_"Hobby accounts are limited to daily cron jobs"_. Le pianificazioni di `PLAN.md` §8
 (`*/15 * * * *`) romperebbero il tuo primo deploy.
 
 Per questo `apps/web/vercel.json` ha pianificazioni **giornaliere**, e la frequenza
@@ -264,9 +265,9 @@ vera la dà `.github/workflows/cron.yml` — GitHub Actions, gratuito sui repo p
 ogni 15 minuti. Devi solo aggiungere due segreti al repo
 (**Settings → Secrets and variables → Actions**):
 
-| Segreto | Valore |
-|---|---|
-| `APP_URL` | l'URL di produzione, senza slash finale |
+| Segreto       | Valore                                              |
+| ------------- | --------------------------------------------------- |
+| `APP_URL`     | l'URL di produzione, senza slash finale             |
 | `CRON_SECRET` | lo stesso valore che hai messo tra le env di Vercel |
 
 Se passi a **Vercel Pro** (20 $/mese): cancella il workflow e riporta in `vercel.json`
@@ -328,7 +329,7 @@ Qui non posso decidere al posto tuo, e il piano sottovaluta il problema.
 
 ### La base giuridica va verificata da un legale
 
-`PLAN.md` §11 indica l'art. 6(1)(e) GDPR — *interesse pubblico*. Quella base è pensata
+`PLAN.md` §11 indica l'art. 6(1)(e) GDPR — _interesse pubblico_. Quella base è pensata
 per soggetti che esercitano pubblici poteri o svolgono un compito di interesse pubblico
 **previsto dalla legge**. VOCE, come progetto privato, difficilmente ci rientra:
 la base realistica per il pilot è il **consenso** (art. 6(1)(a)), esplicito e
@@ -347,7 +348,7 @@ automatico e le tieni fuori dalle pagine pubbliche.
 
 - **DPIA** (valutazione d'impatto): obbligatoria, qui — trattamento su larga scala,
   categorie particolari, profilazione geografica.
-- **Informativa privacy** raggiungibile *prima* dell'invio, **su tutti i canali**
+- **Informativa privacy** raggiungibile _prima_ dell'invio, **su tutti i canali**
   (anche via bot, come primo messaggio).
 - **Registro dei trattamenti**.
 - **Tempi di conservazione** dichiarati **e implementati**: una retention scritta e mai
@@ -385,28 +386,28 @@ prodotto che vive su WhatsApp e Telegram: mostrarlo come una web app ne tradisce
 
 ## Problemi frequenti
 
-| Sintomo | Causa quasi sempre | Rimedio |
-|---|---|---|
-| Il bot non risponde | webhook non registrato o secret token diverso | `getWebhookInfo` e ri-registra |
-| `reports` resta a `status='nuovo'` | `OPENAI_API_KEY` assente/budget esaurito | log Vercel della route di triage |
-| Nessun cluster nasce | pochi report simili, o soglia troppo alta | abbassa `SIMILARITY_NEW`, o `pnpm seed` |
-| Contatore firme sempre 0 | la view eredita la RLS privata di `signatures` | usa la funzione `security definer` |
-| Utente sloggato a caso | `setAll` mancante nel `proxy.ts` | vedi `apps/web/proxy.ts` |
-| `Module not found: fs` | pacchetto Node importato in un componente client | sposta la logica sul server |
-| Build fallisce su Vercel | Root Directory non è `apps/web` | correggi nelle impostazioni |
-| Twilio non consegna | tester fuori dalla finestra di 72h | fai rimandare il codice di join |
+| Sintomo                            | Causa quasi sempre                               | Rimedio                                 |
+| ---------------------------------- | ------------------------------------------------ | --------------------------------------- |
+| Il bot non risponde                | webhook non registrato o secret token diverso    | `getWebhookInfo` e ri-registra          |
+| `reports` resta a `status='nuovo'` | `OPENAI_API_KEY` assente/budget esaurito         | log Vercel della route di triage        |
+| Nessun cluster nasce               | pochi report simili, o soglia troppo alta        | abbassa `SIMILARITY_NEW`, o `pnpm seed` |
+| Contatore firme sempre 0           | la view eredita la RLS privata di `signatures`   | usa la funzione `security definer`      |
+| Utente sloggato a caso             | `setAll` mancante nel `proxy.ts`                 | vedi `apps/web/proxy.ts`                |
+| `Module not found: fs`             | pacchetto Node importato in un componente client | sposta la logica sul server             |
+| Build fallisce su Vercel           | Root Directory non è `apps/web`                  | correggi nelle impostazioni             |
+| Twilio non consegna                | tester fuori dalla finestra di 72h               | fai rimandare il codice di join         |
 
 ---
 
 ## Costi da tenere d'occhio
 
-| Voce | MVP | Dove si controlla |
-|---|---|---|
-| Vercel Hobby | 0 € | cron limitati a 1/giorno |
-| Supabase Free | 0 € | 500 MB DB, si esaurisce con gli embedding |
-| OpenAI | ~15 € | **imposta il budget al passo 2** |
-| Twilio Sandbox | 0 € | SMS OTP a parte (~0,03 €/msg) |
-| Dominio | ~12 €/anno | opzionale |
+| Voce           | MVP        | Dove si controlla                         |
+| -------------- | ---------- | ----------------------------------------- |
+| Vercel Hobby   | 0 €        | cron limitati a 1/giorno                  |
+| Supabase Free  | 0 €        | 500 MB DB, si esaurisce con gli embedding |
+| OpenAI         | ~15 €      | **imposta il budget al passo 2**          |
+| Twilio Sandbox | 0 €        | SMS OTP a parte (~0,03 €/msg)             |
+| Dominio        | ~12 €/anno | opzionale                                 |
 
 L'embedding è la voce che cresce in silenzio: 1536 dimensioni × 4 byte × N report.
 Con 10.000 segnalazioni sono ~60 MB solo di vettori, più gli indici.

@@ -26,6 +26,7 @@ Il design istituzionale italiano (Bootstrap Italia, adottato da Ministero del La
 3. **Framework semiotico anti-marketing**: nessun gradient viola, nessuna emoji, nessuna Silicon-Valley-vibes. Comunica seriousness civica.
 
 Riferimenti canonici:
+
 - **Design system**: https://designers.italia.it
 - **Bootstrap Italia**: https://italia.github.io/bootstrap-italia
 - **Linee guida design servizi digitali PA**: https://docs.italia.it/italia/design/lg-design-servizi-web/
@@ -78,6 +79,7 @@ Non forkiamo Bootstrap Italia (è Bootstrap 5, incompatibile con Tailwind). **Ri
 ```
 
 Motivazioni chiave:
+
 - **Perché Next.js su Vercel**: Route Handlers Edge per bassa latenza ingestione bot, ISR per la dashboard pubblica (cache 60s), zero server da gestire.
 - **Perché Supabase**: Postgres serio (RLS, triggers, pgvector), Auth OTP via SMS/email integrata, Realtime per la dashboard, Edge Functions Deno per il clustering, Storage per i PDF generati. Tutto in un piano gratuito che regge l'MVP.
 - **Perché niente Redis / niente queue esterna**: 14 giorni. Postgres LISTEN/NOTIFY + Vercel cron bastano. Se cresciamo, si aggiunge Upstash.
@@ -90,82 +92,82 @@ Motivazioni chiave:
 
 ```ts
 // tailwind.config.ts
-import type { Config } from 'tailwindcss'
+import type { Config } from "tailwindcss";
 
 export default {
-  content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}'],
+  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
         // Blu Italia (primary)
         primary: {
-          DEFAULT: '#0066CC',
-          50:  '#E6F1FB',
-          100: '#CCE3F7',
-          200: '#99C7EF',
-          300: '#66ABE7',
-          400: '#338FDF',
-          500: '#0066CC', // brand
-          600: '#0059B3',
-          700: '#004080',
-          800: '#00264D',
-          900: '#001A33',
+          DEFAULT: "#0066CC",
+          50: "#E6F1FB",
+          100: "#CCE3F7",
+          200: "#99C7EF",
+          300: "#66ABE7",
+          400: "#338FDF",
+          500: "#0066CC", // brand
+          600: "#0059B3",
+          700: "#004080",
+          800: "#00264D",
+          900: "#001A33",
         },
         // Testo istituzionale
         ink: {
-          DEFAULT: '#17324D',
-          muted:   '#5C6F82',
-          subtle:  '#A5B4C0',
+          DEFAULT: "#17324D",
+          muted: "#5C6F82",
+          subtle: "#A5B4C0",
         },
         // Superfici
         surface: {
-          DEFAULT: '#FFFFFF',
-          alt:     '#F5F5F5',
-          strong:  '#E3E4E6',
+          DEFAULT: "#FFFFFF",
+          alt: "#F5F5F5",
+          strong: "#E3E4E6",
         },
         // Semantica
-        success: '#008758',
-        warning: '#A66300',
-        danger:  '#D9364F',
-        info:    '#5C6F82',
+        success: "#008758",
+        warning: "#A66300",
+        danger: "#D9364F",
+        info: "#5C6F82",
         // Accento istituzionale (rare, per callout importanti)
-        gold: '#B68A35',
+        gold: "#B68A35",
       },
       fontFamily: {
         // Titillium Web = font ufficiale PA italiana (Google Fonts, gratuito)
-        sans:    ['"Titillium Web"', 'system-ui', 'sans-serif'],
-        serif:   ['Lora', 'Georgia', 'serif'], // per titoli editoriali
-        mono:    ['"Roboto Mono"', 'monospace'],
+        sans: ['"Titillium Web"', "system-ui", "sans-serif"],
+        serif: ["Lora", "Georgia", "serif"], // per titoli editoriali
+        mono: ['"Roboto Mono"', "monospace"],
       },
       fontSize: {
         // Scala tipografica Bootstrap Italia
-        'display': ['3rem',    { lineHeight: '1.1',  fontWeight: '700' }],
-        'h1':      ['2.25rem', { lineHeight: '1.2',  fontWeight: '700' }],
-        'h2':      ['1.75rem', { lineHeight: '1.25', fontWeight: '700' }],
-        'h3':      ['1.5rem',  { lineHeight: '1.3',  fontWeight: '600' }],
-        'h4':      ['1.25rem', { lineHeight: '1.35', fontWeight: '600' }],
-        'body':    ['1rem',    { lineHeight: '1.5',  fontWeight: '400' }],
-        'small':   ['0.875rem',{ lineHeight: '1.5',  fontWeight: '400' }],
-        'caption': ['0.75rem', { lineHeight: '1.4',  fontWeight: '400' }],
+        display: ["3rem", { lineHeight: "1.1", fontWeight: "700" }],
+        h1: ["2.25rem", { lineHeight: "1.2", fontWeight: "700" }],
+        h2: ["1.75rem", { lineHeight: "1.25", fontWeight: "700" }],
+        h3: ["1.5rem", { lineHeight: "1.3", fontWeight: "600" }],
+        h4: ["1.25rem", { lineHeight: "1.35", fontWeight: "600" }],
+        body: ["1rem", { lineHeight: "1.5", fontWeight: "400" }],
+        small: ["0.875rem", { lineHeight: "1.5", fontWeight: "400" }],
+        caption: ["0.75rem", { lineHeight: "1.4", fontWeight: "400" }],
       },
       borderRadius: {
         // PA italiana usa raggi contenuti (mai pill design)
-        DEFAULT: '4px',
-        card:    '8px',
-        pill:    '999px', // solo per tag stato
+        DEFAULT: "4px",
+        card: "8px",
+        pill: "999px", // solo per tag stato
       },
       boxShadow: {
         // Ombre morbide, mai drammatiche
-        card:  '0 2px 8px rgba(23, 50, 77, 0.08)',
-        modal: '0 8px 24px rgba(23, 50, 77, 0.16)',
+        card: "0 2px 8px rgba(23, 50, 77, 0.08)",
+        modal: "0 8px 24px rgba(23, 50, 77, 0.16)",
       },
       spacing: {
         // Griglia 8px (standard Designers Italia)
       },
     },
   },
-  plugins: [require('tailwindcss-animate'), require('@tailwindcss/forms')],
-} satisfies Config
+  plugins: [require("tailwindcss-animate"), require("@tailwindcss/forms")],
+} satisfies Config;
 ```
 
 ### 3.2 Componenti chiave (shadcn/ui personalizzati)
@@ -186,7 +188,11 @@ Struttura in `packages/ui/`:
 
 ```tsx
 // app/(public)/layout.tsx
-export default function PublicLayout({ children }: { children: React.ReactNode }) {
+export default function PublicLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <>
       {/* Tricolore ufficiale */}
@@ -218,13 +224,14 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
 
       <FooterIstituzionale />
     </>
-  )
+  );
 }
 ```
 
 ### 3.4 Regole di scrittura (voice & tone)
 
 Copia le linee guida di Designers Italia:
+
 - Verbi al presente e all'attivo. "Scrivi cosa ti è successo", mai "Le segnalazioni possono essere effettuate".
 - Massimo 15 parole per frase in UI.
 - Zero anglicismi non tradotti (dashboard → **quadro pubblico**; report → **segnalazione**; cluster → **gruppo**).
@@ -480,6 +487,7 @@ $$;
 ```
 
 Note operative:
+
 - **RLS attivo ovunque**: nessuna via per cittadino A di leggere i report di cittadino B.
 - **Cluster e actions pubblici**: sono l'output civico, DEVONO essere trasparenti.
 - **pgvector con IVFFlat**: sufficiente fino a ~100k report; oltre si passa a HNSW.
@@ -494,63 +502,66 @@ Note operative:
 
 ```ts
 // app/api/ingest/telegram/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/service'
-import { triageReport } from '@/lib/ai/triage'
+import { NextRequest, NextResponse } from "next/server";
+import { createServiceClient } from "@/lib/supabase/service";
+import { triageReport } from "@/lib/ai/triage";
 
-export const runtime = 'edge'
+export const runtime = "edge";
 
 export async function POST(req: NextRequest) {
-  const update = await req.json()
-  const msg = update.message
-  if (!msg?.text) return NextResponse.json({ ok: true })
+  const update = await req.json();
+  const msg = update.message;
+  if (!msg?.text) return NextResponse.json({ ok: true });
 
-  const supabase = createServiceClient()
+  const supabase = createServiceClient();
 
   // 1. upsert cittadino da telegram_id
   const { data: citizen } = await supabase
-    .from('citizens')
+    .from("citizens")
     .upsert(
       { telegram_id: msg.from.id, last_seen_at: new Date().toISOString() },
-      { onConflict: 'telegram_id' }
+      { onConflict: "telegram_id" },
     )
     .select()
-    .single()
+    .single();
 
   // 2. insert report grezzo
   const { data: report } = await supabase
-    .from('reports')
+    .from("reports")
     .insert({
       citizen_id: citizen.id,
-      channel: 'telegram',
+      channel: "telegram",
       raw_text: msg.text,
-      status: 'nuovo',
+      status: "nuovo",
     })
     .select()
-    .single()
+    .single();
 
   // 3. triage async (non blocca il webhook)
   fetch(`${process.env.APP_URL}/api/internal/triage`, {
-    method: 'POST',
-    headers: { 'x-internal-key': process.env.INTERNAL_KEY! },
+    method: "POST",
+    headers: { "x-internal-key": process.env.INTERNAL_KEY! },
     body: JSON.stringify({ reportId: report.id }),
-  }).catch(() => {})
+  }).catch(() => {});
 
   // 4. risposta immediata all'utente via Telegram
-  await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: msg.chat.id,
-      text:
-        '✅ Grazie. Ho ricevuto la tua segnalazione.\n\n' +
-        'La sto confrontando con quelle di altri cittadini della tua zona. ' +
-        'Ti avviserò appena diventa parte di un\'azione collettiva.\n\n' +
-        `Vedi lo stato: ${process.env.APP_URL}/le-mie-segnalazioni/${report.id}`,
-    }),
-  })
+  await fetch(
+    `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        chat_id: msg.chat.id,
+        text:
+          "✅ Grazie. Ho ricevuto la tua segnalazione.\n\n" +
+          "La sto confrontando con quelle di altri cittadini della tua zona. " +
+          "Ti avviserò appena diventa parte di un'azione collettiva.\n\n" +
+          `Vedi lo stato: ${process.env.APP_URL}/le-mie-segnalazioni/${report.id}`,
+      }),
+    },
+  );
 
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true });
 }
 ```
 
@@ -558,46 +569,50 @@ export async function POST(req: NextRequest) {
 
 ```ts
 // app/api/ingest/whatsapp/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/service'
-import twilio from 'twilio'
+import { NextRequest, NextResponse } from "next/server";
+import { createServiceClient } from "@/lib/supabase/service";
+import twilio from "twilio";
 
-export const runtime = 'nodejs' // twilio SDK non gira su edge
+export const runtime = "nodejs"; // twilio SDK non gira su edge
 
 export async function POST(req: NextRequest) {
-  const form = await req.formData()
-  const from = form.get('From') as string  // "whatsapp:+393331234567"
-  const body = form.get('Body') as string
-  const phone = from.replace('whatsapp:', '')
+  const form = await req.formData();
+  const from = form.get("From") as string; // "whatsapp:+393331234567"
+  const body = form.get("Body") as string;
+  const phone = from.replace("whatsapp:", "");
 
-  const supabase = createServiceClient()
+  const supabase = createServiceClient();
 
   const { data: citizen } = await supabase
-    .from('citizens')
-    .upsert({ phone_e164: phone, last_seen_at: new Date().toISOString() },
-            { onConflict: 'phone_e164' })
-    .select().single()
+    .from("citizens")
+    .upsert(
+      { phone_e164: phone, last_seen_at: new Date().toISOString() },
+      { onConflict: "phone_e164" },
+    )
+    .select()
+    .single();
 
   const { data: report } = await supabase
-    .from('reports')
-    .insert({ citizen_id: citizen.id, channel: 'whatsapp', raw_text: body })
-    .select().single()
+    .from("reports")
+    .insert({ citizen_id: citizen.id, channel: "whatsapp", raw_text: body })
+    .select()
+    .single();
 
   fetch(`${process.env.APP_URL}/api/internal/triage`, {
-    method: 'POST',
-    headers: { 'x-internal-key': process.env.INTERNAL_KEY! },
+    method: "POST",
+    headers: { "x-internal-key": process.env.INTERNAL_KEY! },
     body: JSON.stringify({ reportId: report.id }),
-  }).catch(() => {})
+  }).catch(() => {});
 
   // TwiML response
-  const twiml = new twilio.twiml.MessagingResponse()
+  const twiml = new twilio.twiml.MessagingResponse();
   twiml.message(
-    'Grazie! Ho ricevuto la tua segnalazione.\n' +
-    'Ti avviso appena diventa parte di un\'azione collettiva.'
-  )
+    "Grazie! Ho ricevuto la tua segnalazione.\n" +
+      "Ti avviso appena diventa parte di un'azione collettiva.",
+  );
   return new NextResponse(twiml.toString(), {
-    headers: { 'content-type': 'text/xml' },
-  })
+    headers: { "content-type": "text/xml" },
+  });
 }
 ```
 
@@ -605,42 +620,50 @@ export async function POST(req: NextRequest) {
 
 ```ts
 // app/api/ingest/web/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { createRouteClient } from '@/lib/supabase/route'
-import { z } from 'zod'
+import { NextRequest, NextResponse } from "next/server";
+import { createRouteClient } from "@/lib/supabase/route";
+import { z } from "zod";
 
 const Schema = z.object({
   text: z.string().min(20).max(2000),
   location_hint: z.string().optional(),
   category_hint: z.string().optional(),
   media_urls: z.array(z.string().url()).optional(),
-})
+});
 
 export async function POST(req: NextRequest) {
-  const supabase = createRouteClient(req)
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  const supabase = createRouteClient(req);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user)
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const parsed = Schema.safeParse(await req.json())
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
+  const parsed = Schema.safeParse(await req.json());
+  if (!parsed.success)
+    return NextResponse.json(
+      { error: parsed.error.flatten() },
+      { status: 400 },
+    );
 
   const { data: report, error } = await supabase
-    .from('reports')
+    .from("reports")
     .insert({
       citizen_id: user.id,
-      channel: 'web',
+      channel: "web",
       raw_text: parsed.data.text,
       location_hint: parsed.data.location_hint,
       raw_media_urls: parsed.data.media_urls ?? [],
     })
-    .select().single()
+    .select()
+    .single();
 
-  if (error) return NextResponse.json({ error }, { status: 500 })
+  if (error) return NextResponse.json({ error }, { status: 500 });
 
   // triage sincrono via Server Action interna
-  await triageReport(report.id)
+  await triageReport(report.id);
 
-  return NextResponse.json({ report })
+  return NextResponse.json({ report });
 }
 ```
 
@@ -650,106 +673,125 @@ export async function POST(req: NextRequest) {
 
 ```ts
 // app/api/internal/triage/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { triageReport } from '@/lib/ai/triage'
+import { NextRequest, NextResponse } from "next/server";
+import { triageReport } from "@/lib/ai/triage";
 
-export const runtime = 'nodejs'
-export const maxDuration = 30
+export const runtime = "nodejs";
+export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
-  if (req.headers.get('x-internal-key') !== process.env.INTERNAL_KEY) {
-    return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+  if (req.headers.get("x-internal-key") !== process.env.INTERNAL_KEY) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
-  const { reportId } = await req.json()
-  const result = await triageReport(reportId)
-  return NextResponse.json(result)
+  const { reportId } = await req.json();
+  const result = await triageReport(reportId);
+  return NextResponse.json(result);
 }
 ```
 
 Il core in `lib/ai/triage.ts`:
 
 ```ts
-import OpenAI from 'openai'
-import { createServiceClient } from '@/lib/supabase/service'
+import OpenAI from "openai";
+import { createServiceClient } from "@/lib/supabase/service";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function triageReport(reportId: string) {
-  const sb = createServiceClient()
+  const sb = createServiceClient();
 
-  const { data: report } = await sb.from('reports').select('*').eq('id', reportId).single()
-  if (!report) throw new Error('report not found')
+  const { data: report } = await sb
+    .from("reports")
+    .select("*")
+    .eq("id", reportId)
+    .single();
+  if (!report) throw new Error("report not found");
 
   // 1. Estrazione strutturata (categoria, urgenza, geo hint)
   const structured = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    response_format: { type: 'json_object' },
+    model: "gpt-4o-mini",
+    response_format: { type: "json_object" },
     messages: [
       {
-        role: 'system',
+        role: "system",
         content: `Estrai dalla segnalazione JSON con:
 - category: una tra [sanita, mobilita, ambiente, sicurezza, scuola, servizi_sociali, urbanistica, trasparenza, altro]
 - urgency: 1-5 (5 = pericolo immediato)
 - location_hint: indirizzo o luogo se citato, altrimenti null
 - clean_text: la segnalazione riscritta in italiano formale, mantenendo i fatti`,
       },
-      { role: 'user', content: report.raw_text },
+      { role: "user", content: report.raw_text },
     ],
-  })
-  const meta = JSON.parse(structured.choices[0].message.content!)
+  });
+  const meta = JSON.parse(structured.choices[0].message.content!);
 
   // 2. Embedding sul clean_text
   const emb = await openai.embeddings.create({
-    model: 'text-embedding-3-small',
+    model: "text-embedding-3-small",
     input: meta.clean_text,
-  })
-  const vector = emb.data[0].embedding
+  });
+  const vector = emb.data[0].embedding;
 
   // 3. Cerca cluster esistenti simili nella stessa città/quartiere
-  const { data: matches } = await sb.rpc('match_similar_reports', {
+  const { data: matches } = await sb.rpc("match_similar_reports", {
     query_embedding: vector,
     match_threshold: 0.82,
     match_count: 10,
     filter_city: report.city,
     filter_neighborhood: report.neighborhood,
-  })
+  });
 
   // Trova il cluster più frequente tra i match
-  const clusterVotes = new Map<string, number>()
+  const clusterVotes = new Map<string, number>();
   for (const m of matches ?? []) {
-    if (m.cluster_id) clusterVotes.set(m.cluster_id, (clusterVotes.get(m.cluster_id) ?? 0) + 1)
+    if (m.cluster_id)
+      clusterVotes.set(m.cluster_id, (clusterVotes.get(m.cluster_id) ?? 0) + 1);
   }
-  const bestCluster = [...clusterVotes.entries()].sort((a, b) => b[1] - a[1])[0]?.[0]
+  const bestCluster = [...clusterVotes.entries()].sort(
+    (a, b) => b[1] - a[1],
+  )[0]?.[0];
 
   // 4. Salva embedding + aggiorna report
-  await sb.from('report_embeddings').insert({ report_id: reportId, embedding: vector })
-  await sb.from('reports').update({
-    category: meta.category,
-    urgency: meta.urgency,
-    location_hint: meta.location_hint ?? report.location_hint,
-    status: bestCluster ? 'clustered' : 'triaged',
-    cluster_id: bestCluster,
-    triaged_at: new Date().toISOString(),
-  }).eq('id', reportId)
+  await sb
+    .from("report_embeddings")
+    .insert({ report_id: reportId, embedding: vector });
+  await sb
+    .from("reports")
+    .update({
+      category: meta.category,
+      urgency: meta.urgency,
+      location_hint: meta.location_hint ?? report.location_hint,
+      status: bestCluster ? "clustered" : "triaged",
+      cluster_id: bestCluster,
+      triaged_at: new Date().toISOString(),
+    })
+    .eq("id", reportId);
 
   // 5. Se cluster ha raggiunto soglia → trigger generate-dossier
   if (bestCluster) {
-    const { data: cluster } = await sb.from('clusters').select('*').eq('id', bestCluster).single()
-    if (cluster.citizens_count >= 30 && cluster.status === 'emergente') {
-      await sb.from('clusters').update({
-        status: 'attivo',
-        threshold_reached_at: new Date().toISOString(),
-      }).eq('id', bestCluster)
+    const { data: cluster } = await sb
+      .from("clusters")
+      .select("*")
+      .eq("id", bestCluster)
+      .single();
+    if (cluster.citizens_count >= 30 && cluster.status === "emergente") {
+      await sb
+        .from("clusters")
+        .update({
+          status: "attivo",
+          threshold_reached_at: new Date().toISOString(),
+        })
+        .eq("id", bestCluster);
 
       fetch(`${process.env.APP_URL}/api/internal/generate-dossier`, {
-        method: 'POST',
-        headers: { 'x-internal-key': process.env.INTERNAL_KEY! },
+        method: "POST",
+        headers: { "x-internal-key": process.env.INTERNAL_KEY! },
         body: JSON.stringify({ clusterId: bestCluster }),
-      }).catch(() => {})
+      }).catch(() => {});
     }
   }
 
-  return { clustered: !!bestCluster, category: meta.category }
+  return { clustered: !!bestCluster, category: meta.category };
 }
 ```
 
@@ -772,47 +814,65 @@ Edge Function `supabase/functions/cluster-refresh/index.ts` (Deno):
 ```ts
 // Deno + PyScript-free: usa clustering "poor man" — DBSCAN via calcolo distanze in SQL
 // Per l'MVP evitiamo HDBSCAN esterno: sfruttiamo pgvector direttamente.
-import { serve } from 'https://deno.land/std/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from "https://deno.land/std/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 serve(async () => {
-  const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SERVICE_ROLE_KEY')!)
+  const sb = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SERVICE_ROLE_KEY")!,
+  );
 
   // Report senza cluster negli ultimi 7gg
   const { data: pending } = await sb
-    .from('reports')
-    .select('id, city, neighborhood, category')
-    .is('cluster_id', null)
-    .eq('status', 'triaged')
-    .gte('created_at', new Date(Date.now() - 7 * 864e5).toISOString())
+    .from("reports")
+    .select("id, city, neighborhood, category")
+    .is("cluster_id", null)
+    .eq("status", "triaged")
+    .gte("created_at", new Date(Date.now() - 7 * 864e5).toISOString());
 
   for (const r of pending ?? []) {
     // Trova >=5 report simili senza cluster nella stessa zona → crea cluster
-    const { data: neighbors } = await sb.rpc('match_similar_reports', {
-      query_embedding: (await sb.from('report_embeddings').select('embedding').eq('report_id', r.id).single()).data!.embedding,
+    const { data: neighbors } = await sb.rpc("match_similar_reports", {
+      query_embedding: (
+        await sb
+          .from("report_embeddings")
+          .select("embedding")
+          .eq("report_id", r.id)
+          .single()
+      ).data!.embedding,
       match_threshold: 0.84,
       match_count: 50,
       filter_city: r.city,
       filter_neighborhood: r.neighborhood,
-    })
-    const orphans = (neighbors ?? []).filter(n => !n.cluster_id)
+    });
+    const orphans = (neighbors ?? []).filter((n) => !n.cluster_id);
     if (orphans.length >= 5) {
       // Chiama LLM per generare title/summary
-      const summary = await summarizeCluster(orphans.map(o => o.report_id))
-      const { data: cluster } = await sb.from('clusters').insert({
-        title: summary.title,
-        summary: summary.summary,
-        category: r.category,
-        city: r.city,
-        neighborhood: r.neighborhood,
-      }).select().single()
+      const summary = await summarizeCluster(orphans.map((o) => o.report_id));
+      const { data: cluster } = await sb
+        .from("clusters")
+        .insert({
+          title: summary.title,
+          summary: summary.summary,
+          category: r.category,
+          city: r.city,
+          neighborhood: r.neighborhood,
+        })
+        .select()
+        .single();
       // assegna tutti gli orfani
-      await sb.from('reports').update({ cluster_id: cluster.id, status: 'clustered' })
-        .in('id', orphans.map(o => o.report_id))
+      await sb
+        .from("reports")
+        .update({ cluster_id: cluster.id, status: "clustered" })
+        .in(
+          "id",
+          orphans.map((o) => o.report_id),
+        );
     }
   }
-  return new Response('ok')
-})
+  return new Response("ok");
+});
 ```
 
 ### 5.4 Generazione dossier
@@ -822,31 +882,47 @@ serve(async () => {
 ```ts
 // lib/ai/dossier.ts
 export async function generateDossier(clusterId: string) {
-  const sb = createServiceClient()
-  const { data: cluster } = await sb.from('clusters').select('*').eq('id', clusterId).single()
-  const { data: reports } = await sb.from('reports')
-    .select('raw_text, created_at, location_hint')
-    .eq('cluster_id', clusterId)
-    .limit(200)
+  const sb = createServiceClient();
+  const { data: cluster } = await sb
+    .from("clusters")
+    .select("*")
+    .eq("id", clusterId)
+    .single();
+  const { data: reports } = await sb
+    .from("reports")
+    .select("raw_text, created_at, location_hint")
+    .eq("cluster_id", clusterId)
+    .limit(200);
 
-  const context = reports!.map((r, i) =>
-    `[${i + 1}] ${r.created_at.slice(0, 10)} — ${r.location_hint ?? 'n/d'}: ${r.raw_text}`
-  ).join('\n')
+  const context = reports!
+    .map(
+      (r, i) =>
+        `[${i + 1}] ${r.created_at.slice(0, 10)} — ${r.location_hint ?? "n/d"}: ${r.raw_text}`,
+    )
+    .join("\n");
 
-  for (const kind of ['esposto_procura', 'accesso_civico', 'dossier_giornalistico', 'mozione_consigliere']) {
-    const prompt = PROMPTS[kind](cluster, context)
+  for (const kind of [
+    "esposto_procura",
+    "accesso_civico",
+    "dossier_giornalistico",
+    "mozione_consigliere",
+  ]) {
+    const prompt = PROMPTS[kind](cluster, context);
     const res = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'system', content: prompt.system }, { role: 'user', content: prompt.user }],
-    })
-    await sb.from('actions').insert({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: prompt.system },
+        { role: "user", content: prompt.user },
+      ],
+    });
+    await sb.from("actions").insert({
       cluster_id: clusterId,
       kind,
       title: prompt.title(cluster),
       body_markdown: res.choices[0].message.content!,
-      status: 'in_firma',
-      signatures_target: kind === 'esposto_procura' ? 100 : 30,
-    })
+      status: "in_firma",
+      signatures_target: kind === "esposto_procura" ? 100 : 30,
+    });
   }
 }
 ```
@@ -858,21 +934,28 @@ Template di prompt in `lib/ai/prompts.ts` — uno per ciascun tipo di atto, con 
 **`POST /api/actions/:id/sign`** — cittadino autenticato aggiunge la sua firma
 
 ```ts
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = createRouteClient(req)
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+export async function POST(
+  req: NextRequest,
+  { params }: { params: { id: string } },
+) {
+  const supabase = createRouteClient(req);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user)
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const ipHash = await hashIp(req.headers.get('x-forwarded-for') ?? '')
+  const ipHash = await hashIp(req.headers.get("x-forwarded-for") ?? "");
   const { error } = await supabase
-    .from('signatures')
-    .insert({ action_id: params.id, citizen_id: user.id, ip_hash: ipHash })
-  if (error?.code === '23505') return NextResponse.json({ error: 'già firmato' }, { status: 409 })
-  if (error) return NextResponse.json({ error }, { status: 500 })
+    .from("signatures")
+    .insert({ action_id: params.id, citizen_id: user.id, ip_hash: ipHash });
+  if (error?.code === "23505")
+    return NextResponse.json({ error: "già firmato" }, { status: 409 });
+  if (error) return NextResponse.json({ error }, { status: 500 });
 
   // aggiorna contatore su actions
-  await supabase.rpc('bump_signatures', { action_uuid: params.id })
-  return NextResponse.json({ ok: true })
+  await supabase.rpc("bump_signatures", { action_uuid: params.id });
+  return NextResponse.json({ ok: true });
 }
 ```
 
@@ -969,13 +1052,15 @@ Pagine chiave (specifica di contenuto):
 ### 6.1 Landing `/`
 
 Sezione hero con:
-- Titolo `<h1>`: *"Il primo sindacato civico automatico"*
-- Sottotitolo: *"Racconta un problema del tuo quartiere. Se non sei da sola, VOCE lo trasforma in azione."*
-- Due bottoni primari: `Segnala su Telegram` (`t.me/voce_civica_bot`) e `Segnala sul sito`
-- Contatore live (Realtime Supabase): *"1.247 cittadini attivi · 43 cluster in azione · 8 risposte da PA ricevute questa settimana"*
-- Card 3 colonne: *Come funziona* (racconta → aggreghiamo → agiamo), con icone SVG minimali
+
+- Titolo `<h1>`: _"Il primo sindacato civico automatico"_
+- Sottotitolo: _"Racconta un problema del tuo quartiere. Se non sei da sola, VOCE lo trasforma in azione."_
+- Due bottoni primari: `Segnala su Telegram` (`t.me/try_voce_bot`) e `Segnala sul sito`
+- Contatore live (Realtime Supabase): _"1.247 cittadini attivi · 43 cluster in azione · 8 risposte da PA ricevute questa settimana"_
+- Card 3 colonne: _Come funziona_ (racconta → aggreghiamo → agiamo), con icone SVG minimali
 
 Sotto:
+
 - **Ultimi cluster attivi nella tua città** (geolocalizza da IP con Vercel Geolocation, fallback selettore)
 - **Azioni in raccolta firme** con progress bar
 
@@ -983,11 +1068,11 @@ Sotto:
 
 Form a step (senza multi-page, con progressive disclosure):
 
-1. **Cosa è successo?** — textarea grande, placeholder concreto: *"Es. Ieri al pronto soccorso del San Paolo ho aspettato 8 ore per un dolore al petto. Non è la prima volta."*
+1. **Cosa è successo?** — textarea grande, placeholder concreto: _"Es. Ieri al pronto soccorso del San Paolo ho aspettato 8 ore per un dolore al petto. Non è la prima volta."_
 2. **Dove?** — autocompletamento indirizzo (Nominatim OSM), + pulsante "usa la mia posizione"
 3. **Vuoi aggiungere una foto?** — upload opzionale (Supabase Storage)
 4. **Come ti chiami?** — nome + telefono OR email (per OTP). Nessun dato inutile.
-5. **Invia** — poi schermata di conferma con: *"Grazie. Stiamo confrontando la tua segnalazione con quelle di altri cittadini. Riceverai un messaggio appena diventa parte di un'azione collettiva."*
+5. **Invia** — poi schermata di conferma con: _"Grazie. Stiamo confrontando la tua segnalazione con quelle di altri cittadini. Riceverai un messaggio appena diventa parte di un'azione collettiva."_
 
 Micro-copy WCAG-compliant, ogni campo ha `<label>` visibile, errori inline in rosso `#D9364F`.
 
@@ -996,14 +1081,16 @@ Micro-copy WCAG-compliant, ogni campo ha `<label>` visibile, errori inline in ro
 Layout in due colonne (desktop):
 
 Sinistra:
+
 - Titolo cluster + `<TagStato>` (`attivo`, `in-azione`, `risolto`)
 - Riassunto in 2 frasi
 - Timeline verticale delle segnalazioni (data + estratto anonimizzato)
 - Mappa con punti sfumati a raggio 300m (privacy)
 
 Destra:
+
 - Numeri chiave: `43 cittadini · 67 segnalazioni · 12 giorni attivi`
-- Azioni collegate (card per ciascuna): *Esposto Procura*, *Accesso civico al Comune*, *Mozione depositata*
+- Azioni collegate (card per ciascuna): _Esposto Procura_, _Accesso civico al Comune_, _Mozione depositata_
 - Pulsante `Firma anche tu` (richiede login)
 
 ### 6.4 `/dossier/[actionId]` — anatomia di un atto
@@ -1020,6 +1107,7 @@ Destra:
 ## 7. Autenticazione
 
 Supabase Auth con:
+
 - **OTP via email** come default (gratis, illimitato)
 - **OTP via SMS** via Twilio (richiesto per firma di azioni: garanzia identità)
 - **Telegram login** automatico (associazione `telegram_id`)
@@ -1027,19 +1115,19 @@ Supabase Auth con:
 Middleware `middleware.ts`:
 
 ```ts
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
-import { NextResponse, type NextRequest } from 'next/server'
+import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
+import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(req: NextRequest) {
-  const res = NextResponse.next()
-  const supabase = createMiddlewareClient({ req, res })
-  await supabase.auth.getSession()
-  return res
+  const res = NextResponse.next();
+  const supabase = createMiddlewareClient({ req, res });
+  await supabase.auth.getSession();
+  return res;
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
-}
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+};
 ```
 
 Pagine sotto `(auth)` richiedono utente loggato — Server Component redirige a `/accedi` altrimenti.
@@ -1056,9 +1144,9 @@ Pagine sotto `(auth)` richiedono utente loggato — Server Component redirige a 
   "framework": "nextjs",
   "regions": ["fra1"],
   "crons": [
-    { "path": "/api/cron/recluster",        "schedule": "*/15 * * * *" },
-    { "path": "/api/cron/dossier-refresh",  "schedule": "0 * * * *" },
-    { "path": "/api/cron/notify-signatures","schedule": "0 9 * * *" }
+    { "path": "/api/cron/recluster", "schedule": "*/15 * * * *" },
+    { "path": "/api/cron/dossier-refresh", "schedule": "0 * * * *" },
+    { "path": "/api/cron/notify-signatures", "schedule": "0 9 * * *" }
   ]
 }
 ```
@@ -1079,6 +1167,7 @@ APP_URL=https://voce-civica.vercel.app
 ```
 
 Setup post-deploy:
+
 1. `supabase migration up` → applica schema
 2. Registra webhook Telegram: `curl "https://api.telegram.org/bot$TOKEN/setWebhook?url=$APP_URL/api/ingest/telegram"`
 3. In Twilio console → WhatsApp Sandbox → webhook URL = `$APP_URL/api/ingest/whatsapp`
@@ -1092,6 +1181,7 @@ Divisione lavoro ipotetica per team di 3 (Full-stack + AI + Design/Content). Se 
 ### Settimana 1 — Fondamenta
 
 **Giorno 1-2 · Setup**
+
 - Init monorepo pnpm (`apps/web`, `packages/ui`, `packages/db`)
 - Supabase project + apply `0001_init.sql`
 - Deploy Vercel + collegamento GitHub
@@ -1100,6 +1190,7 @@ Divisione lavoro ipotetica per team di 3 (Full-stack + AI + Design/Content). Se 
 - Componenti base: `HeaderIstituzionale`, `Tricolore`, `Bottone`, `CardIstituzionale`
 
 **Giorno 3-4 · Ingestione**
+
 - Route `/api/ingest/telegram` + registrazione webhook
 - Route `/api/ingest/whatsapp` (Twilio Sandbox)
 - Route `/api/ingest/web` + form `/segnala`
@@ -1107,11 +1198,13 @@ Divisione lavoro ipotetica per team di 3 (Full-stack + AI + Design/Content). Se 
 - Salvataggio corretto in Supabase con RLS testato
 
 **Giorno 5-6 · Triage AI**
+
 - `lib/ai/triage.ts` completo
 - Route `/api/internal/triage`
 - Test end-to-end: segnalazione via Telegram → embedding → categoria → salvata
 
 **Giorno 7 · Cluster**
+
 - Edge function `cluster-refresh` in Supabase
 - Vercel cron `/api/cron/recluster`
 - Test con 50 segnalazioni sintetiche → verifica clustering coerente
@@ -1119,11 +1212,13 @@ Divisione lavoro ipotetica per team di 3 (Full-stack + AI + Design/Content). Se 
 ### Settimana 2 — Prodotto pubblico
 
 **Giorno 8-9 · Dashboard**
+
 - Pagina `/` con contatori live (Supabase Realtime)
 - Pagina `/cluster` con filtri
 - Pagina `/cluster/[id]` con mappa, timeline, azioni
 
 **Giorno 10-11 · Dossier + firma**
+
 - `lib/ai/dossier.ts` con 4 template (esposto, accesso civico, mozione, dossier)
 - Route `/api/internal/generate-dossier`
 - Pagina `/dossier/[id]` con markdown render + firma
@@ -1131,17 +1226,20 @@ Divisione lavoro ipotetica per team di 3 (Full-stack + AI + Design/Content). Se 
 - Generazione PDF (via `@react-pdf/renderer` o `puppeteer-core` su Vercel)
 
 **Giorno 12 · API pubbliche + trasparenza**
+
 - Route `/api/public/*`
 - Pagina `/trasparenza` con stats aggregate
 - Export CSV/JSON
 
 **Giorno 13 · Pilot data + rifinitura**
+
 - Seed manuale del quartiere pilota (contatti PA, categorie locali)
 - Bug bash con 5 tester reali (parenti/amici) → 10 segnalazioni test
 - Fix accessibility WCAG con axe-core
 - SEO minimo: meta OG, sitemap, robots
 
 **Giorno 14 · Demo + submission**
+
 - Video demo 3 minuti (Loom): flusso completo dalla segnalazione al dossier firmato
 - README completo su GitHub con setup locale in <10 minuti
 - Deploy finale
@@ -1151,7 +1249,7 @@ Divisione lavoro ipotetica per team di 3 (Full-stack + AI + Design/Content). Se 
 
 - [ ] Repo pubblico AGPL-3.0
 - [ ] Deploy live raggiungibile
-- [ ] Bot Telegram funzionante `@voce_civica_bot`
+- [ ] Bot Telegram funzionante `@try_voce_bot`
 - [ ] Almeno un cluster reale generato da almeno 5 utenti diversi
 - [ ] Almeno un dossier (bozza esposto) generato e visibile pubblicamente
 - [ ] Video demo 3 minuti
@@ -1161,15 +1259,15 @@ Divisione lavoro ipotetica per team di 3 (Full-stack + AI + Design/Content). Se 
 
 ## 10. Costi stimati (14 giorni + primo mese)
 
-| Voce | MVP | Primo mese |
-|---|---|---|
-| Vercel Hobby | 0 € | 0 € |
-| Supabase Free | 0 € | 0 € (fino a 500MB + 50k MAU) |
-| OpenAI (`gpt-4o-mini` + `text-embedding-3-small`) | ~15 € | ~50 € |
-| Twilio WhatsApp Sandbox | 0 € | 0 € |
-| Twilio SMS OTP (1000 firme) | 0 € | ~30 € |
-| Dominio | 12 € | 0 € |
-| **Totale** | **~30 €** | **~80 €** |
+| Voce                                              | MVP       | Primo mese                   |
+| ------------------------------------------------- | --------- | ---------------------------- |
+| Vercel Hobby                                      | 0 €       | 0 €                          |
+| Supabase Free                                     | 0 €       | 0 € (fino a 500MB + 50k MAU) |
+| OpenAI (`gpt-4o-mini` + `text-embedding-3-small`) | ~15 €     | ~50 €                        |
+| Twilio WhatsApp Sandbox                           | 0 €       | 0 €                          |
+| Twilio SMS OTP (1000 firme)                       | 0 €       | ~30 €                        |
+| Dominio                                           | 12 €      | 0 €                          |
+| **Totale**                                        | **~30 €** | **~80 €**                    |
 
 Ampiamente sostenibile con qualunque piccolo grant civico o crowdfunding di quartiere.
 
@@ -1181,7 +1279,7 @@ Ampiamente sostenibile con qualunque piccolo grant civico o crowdfunding di quar
 - **Anonimizzazione output pubblico**: coordinate arrotondate a 300m, testi passati da LLM che rimuove nomi propri prima di essere mostrati in cluster pubblici.
 - **Diritto all'oblio**: endpoint `DELETE /api/citizens/me` che cascade elimina tutto (RLS + `on delete cascade`).
 - **Prevenzione abuso**: rate-limit per phone/telegram_id (max 5 segnalazioni/ora), filtro contenuti offensivi via `omni-moderation-latest`.
-- **Trasparenza AI**: ogni azione generata mostra un banner *"Bozza generata da AI, revisionata da [nome umano]"*. Nessun atto viene inviato senza revisione umana.
+- **Trasparenza AI**: ogni azione generata mostra un banner _"Bozza generata da AI, revisionata da [nome umano]"_. Nessun atto viene inviato senza revisione umana.
 - **Sicurezza tecnica**: RLS su ogni tabella, service role key mai esposta client-side, INTERNAL_KEY per webhook interni, Content Security Policy stretta.
 
 ---
@@ -1189,6 +1287,7 @@ Ampiamente sostenibile con qualunque piccolo grant civico o crowdfunding di quar
 ## 12. Post-hackathon (roadmap 3-6 mesi)
 
 Se vinciamo la Builder Residency:
+
 - **Voice input** (Whisper via OpenAI): fondamentale per over-65 e non-nativi
 - **Integrazione IO / SPID**: per firme legalmente qualificate
 - **Multi-comune**: onboarding self-serve per associazioni di quartiere
@@ -1199,6 +1298,7 @@ Se vinciamo la Builder Residency:
 - **Partnership**: ActionAid, Cittadinanzattiva, Libera, Slow Food, Fondazione Openpolis
 
 Modello economico sostenibile (post-MVP):
+
 - Comuni pagano canone modico per dashboard privata + analytics interne
 - Fondazioni sostengono le istanze territoriali
 - Codice sempre AGPL-3.0
@@ -1209,11 +1309,11 @@ Modello economico sostenibile (post-MVP):
 
 Tre candidati, uno da scegliere entro giorno 2:
 
-| Quartiere | Pro | Contro |
-|---|---|---|
-| **Milano Corvetto** | Alta densità di associazioni attive, buona penetrazione smartphone, PA reattiva a pressione mediatica | Overcrowded di iniziative civiche, meno "vergine" |
-| **Napoli Sanità** | Rete comunitaria fortissima, casi civici estremamente concreti, potenziale storytelling | Rapporto complicato con istituzioni, rischio strumentalizzazione |
-| **Palermo Ballarò** | Necessità reale drammatica, mix demografico ricco, appoggio possibile da Moltivolti e simili | Digital divide reale, richiede modalità voice fin dall'MVP |
+| Quartiere           | Pro                                                                                                   | Contro                                                           |
+| ------------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| **Milano Corvetto** | Alta densità di associazioni attive, buona penetrazione smartphone, PA reattiva a pressione mediatica | Overcrowded di iniziative civiche, meno "vergine"                |
+| **Napoli Sanità**   | Rete comunitaria fortissima, casi civici estremamente concreti, potenziale storytelling               | Rapporto complicato con istituzioni, rischio strumentalizzazione |
+| **Palermo Ballarò** | Necessità reale drammatica, mix demografico ricco, appoggio possibile da Moltivolti e simili          | Digital divide reale, richiede modalità voice fin dall'MVP       |
 
 **Raccomandazione**: partire da **Corvetto** per l'MVP (barriera all'ingresso bassa, feedback rapido, alta probabilità di generare un cluster reale in 14 giorni) e presentare al pitch un piano di espansione verso Sanità e Ballarò con voice input.
 
@@ -1223,6 +1323,6 @@ Tre candidati, uno da scegliere entro giorno 2:
 
 1. Creare il repo GitHub `voce-civica` sotto un'organizzazione neutrale, licenza AGPL-3.0, README con questo PLAN in radice.
 2. Aprire progetto Supabase, applicare `0001_init.sql`, verificare `pgvector` attivo.
-3. Registrare bot Telegram `@voce_civica_bot` via `@BotFather`, ottenere token, salvarlo tra i secrets Vercel.
+3. Registrare bot Telegram `@try_voce_bot` via `@BotFather`, ottenere token, salvarlo tra i secrets Vercel.
 
 Da lì, il resto è esecuzione.
