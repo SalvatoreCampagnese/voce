@@ -19,6 +19,7 @@ import type {
   PublicCityStats,
   PublicCluster,
   PublicClusterReport,
+  PublicPlatformStats,
 } from '@voce/db'
 
 async function conClient<T>(
@@ -39,26 +40,39 @@ async function conClient<T>(
 
 export interface StatistichePiattaforma {
   cittadini: number
+  segnalazioni: number
   gruppi: number
   atti: number
   risposte: number
 }
 
+/**
+ * Totali per i contatori della home.
+ *
+ * Legge `public_platform_stats` e NON `public_city_stats`: quest'ultima deriva
+ * dai gruppi ed è filtrata alla soglia dei 3 cittadini, quindi finché non
+ * esiste un gruppo pubblico restituisce zero righe. La home finiva per dire
+ * «0 cittadini che hanno segnalato» mentre le segnalazioni c'erano davvero.
+ */
 export async function getStatistichePiattaforma(): Promise<StatistichePiattaforma> {
   return conClient(
     'statistiche',
     async (sb) => {
-      const { data, error } = await sb.from('public_city_stats').select('*')
+      const { data, error } = await sb
+        .from('public_platform_stats')
+        .select('*')
+        .maybeSingle()
       if (error) throw error
-      const righe = (data ?? []) as PublicCityStats[]
+      const riga = data as PublicPlatformStats | null
       return {
-        cittadini: righe.reduce((n, r) => n + Number(r.citizens_count ?? 0), 0),
-        gruppi: righe.reduce((n, r) => n + Number(r.clusters_count ?? 0), 0),
-        atti: righe.reduce((n, r) => n + Number(r.actions_sent ?? 0), 0),
-        risposte: righe.reduce((n, r) => n + Number(r.responses_received ?? 0), 0),
+        cittadini: Number(riga?.citizens_count ?? 0),
+        segnalazioni: Number(riga?.reports_count ?? 0),
+        gruppi: Number(riga?.clusters_count ?? 0),
+        atti: Number(riga?.actions_sent ?? 0),
+        risposte: Number(riga?.responses_received ?? 0),
       }
     },
-    { cittadini: 0, gruppi: 0, atti: 0, risposte: 0 },
+    { cittadini: 0, segnalazioni: 0, gruppi: 0, atti: 0, risposte: 0 },
   )
 }
 

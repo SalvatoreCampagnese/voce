@@ -88,18 +88,27 @@ export default async function LandingPage() {
             etichetta="cittadini che hanno segnalato"
           />
           <Numero
-            valore={statistiche.gruppi}
-            etichetta="gruppi di segnalazioni"
+            valore={statistiche.segnalazioni}
+            etichetta="segnalazioni raccolte"
           />
+          <Numero valore={statistiche.gruppi} etichetta="gruppi pubblici" />
           <Numero valore={statistiche.atti} etichetta="atti inviati" />
-          <Numero valore={statistiche.risposte} etichetta="risposte ricevute" />
         </dl>
-        {statistiche.cittadini === 0 && (
+
+        {/* Tre messaggi diversi per tre situazioni diverse. Dire «nessuna
+            segnalazione» a chi ha appena scritto sarebbe falso, e dire «stiamo
+            lavorando» quando non è arrivato niente sarebbe una promessa vuota. */}
+        {statistiche.segnalazioni === 0 ? (
           <p className="mt-6 text-small text-ink-muted">
             Nessuna segnalazione ancora. Il primo gruppo nasce quando cinque
             persone raccontano lo stesso problema.
           </p>
-        )}
+        ) : statistiche.gruppi === 0 ? (
+          <p className="mt-6 text-small text-ink-muted">
+            Le prime segnalazioni sono arrivate. Un gruppo diventa pubblico
+            quando almeno tre persone diverse raccontano lo stesso problema.
+          </p>
+        ) : null}
       </section>
 
       {/* ---------------------------------------------------------------- */}

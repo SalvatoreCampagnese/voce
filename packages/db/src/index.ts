@@ -39,6 +39,7 @@ export type PublicCluster = Views['public_clusters']['Row']
 export type PublicClusterReport = Views['public_cluster_reports']['Row']
 export type PublicAction = Views['public_actions']['Row']
 export type PublicCityStats = Views['public_city_stats']['Row']
+export type PublicPlatformStats = Views['public_platform_stats']['Row']
 
 // --- Enum -------------------------------------------------------------------
 export type ReportChannel = Enums['report_channel']

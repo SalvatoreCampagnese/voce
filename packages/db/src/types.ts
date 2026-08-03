@@ -626,6 +626,16 @@ export type Database = {
         }
         Relationships: []
       }
+      public_platform_stats: {
+        Row: {
+          actions_sent: number | null
+          citizens_count: number | null
+          clusters_count: number | null
+          reports_count: number | null
+          responses_received: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       _postgis_deprecate: {
