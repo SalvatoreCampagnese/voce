@@ -185,11 +185,21 @@ export async function POST(req: NextRequest) {
       try {
         const esito = await triageReport(report.id)
 
+        // Il modello ha giudicato il messaggio troppo vago per farci qualcosa,
+        // e la segnalazione è stata archiviata. Il cittadino però ha appena
+        // letto «la sto confrontando con quelle di altri»: se non gli diciamo
+        // niente, resta convinto che stiamo lavorando su una cosa che invece è
+        // ferma. Glielo diciamo, e gli mostriamo come riscriverla.
+        if (!esito.actionable) {
+          await inviaMessaggioTelegram(chatId, MESSAGGI.servonoDettagli)
+          return
+        }
+
         // Il comune non è né nel testo né fra ciò che sappiamo del cittadino:
         // senza, questa segnalazione non potrà mai unirsi a quelle dei vicini.
         // Si chiede adesso, una volta sola, e la risposta arriverà al prossimo
         // messaggio (vedi pending_city_report_id).
-        if (esito.actionable && esito.needsCity) {
+        if (esito.needsCity) {
           await sb
             .from('citizens')
             .update({ pending_city_report_id: report.id })

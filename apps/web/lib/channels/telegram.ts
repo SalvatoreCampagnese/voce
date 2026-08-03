@@ -69,6 +69,23 @@ export const MESSAGGI = {
   troppoBreve:
     'Ho bisogno di qualche parola in più per capire.\n\nRaccontami cosa è successo, dove, e da quanto tempo va avanti.',
 
+  // Il messaggio supera il controllo di lunghezza ma non contiene abbastanza
+  // per essere usato: «Guasto elettrico» sono due parole senza cosa, dove e
+  // quando. Va detto, e va detto con un esempio: chiedere «più dettagli» senza
+  // mostrare quali è un modo garantito per farsi rispondere «ma quali?».
+  // Non lasciarlo credere che stiamo lavorando su una segnalazione archiviata:
+  // il messaggio precedente gli ha appena promesso il contrario.
+  servonoDettagli:
+    [
+      'Mi serve qualche dettaglio in più: così com’è non riesco a confrontarla con le altre.',
+      '',
+      'Raccontami cosa succede, dove, e da quanto tempo va avanti.',
+      '',
+      'Per esempio: «Da tre settimane il lampione di via Verdi è spento, la sera non si vede niente e ci sono già state due cadute».',
+      '',
+      'Riscrivimela pure qui: la sostituisco a quella di prima.',
+    ].join('\n'),
+
   // Si chiede il comune una volta sola, e si spiega perché: una domanda senza
   // motivo sembra burocrazia, con il motivo diventa collaborazione.
   chiediComune:

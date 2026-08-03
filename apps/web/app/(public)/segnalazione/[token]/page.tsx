@@ -51,7 +51,7 @@ async function leggiSegnalazione(token: string): Promise<StatoSegnalazione | nul
 }
 
 /** Che cosa sta succedendo, detto senza gergo. */
-function spiegazione(s: StatoSegnalazione): { tono: 'info' | 'successo'; titolo: string; testo: string } {
+function spiegazione(s: StatoSegnalazione): { tono: 'info' | 'successo' | 'attenzione'; titolo: string; testo: string } {
   if (s.cluster_id && s.cluster_is_public) {
     return {
       tono: 'successo',
@@ -75,6 +75,18 @@ function spiegazione(s: StatoSegnalazione): { tono: 'info' | 'successo'; titolo:
       tono: 'info',
       titolo: 'L’abbiamo ricevuta',
       testo: 'La stiamo leggendo. Fra poco la confronteremo con le altre della tua zona.',
+    }
+  }
+  // Archiviata: dirle «la stiamo confrontando» sarebbe falso, ed è la bugia
+  // più facile da dire perché nessuno se ne accorgerebbe.
+  if (s.status === 'archiviato') {
+    return {
+      tono: 'attenzione',
+      titolo: 'Ci servono più dettagli',
+      testo:
+        'Così com’è non riusciamo a confrontarla con le altre: mancano il cosa, ' +
+        'il dove o il quando. Riscrivila sul canale da cui l’hai mandata e la ' +
+        'sostituiamo a questa.',
     }
   }
   return {

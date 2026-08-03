@@ -40,7 +40,16 @@ export async function estraiLuogo(testo: string): Promise<LuogoOutput | null> {
     ),
   })
 
-  return completamento.choices[0]?.message.parsed ?? null
+  const parsed = completamento.choices[0]?.message.parsed
+  if (!parsed) return null
+
+  // Anche qui il modello può scrivere la stringa "null": vale come assente.
+  const pulisci = (v: string | null) => {
+    const t = (v ?? '').trim()
+    return !t || ['null', 'none', 'n/d', 'nd', '-'].includes(t.toLowerCase()) ? null : t
+  }
+
+  return { ...parsed, city: pulisci(parsed.city), neighborhood: pulisci(parsed.neighborhood) }
 }
 
 /**

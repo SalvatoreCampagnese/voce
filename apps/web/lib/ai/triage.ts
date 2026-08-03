@@ -12,6 +12,31 @@ import {
 import { TRIAGE_SYSTEM_PROMPT, TriageSchema, type TriageOutput } from '@/lib/ai/prompts'
 import { getSoglie } from '@/lib/config/thresholds'
 
+/**
+ * Normalizza un campo testuale opzionale prodotto dal modello.
+ *
+ * Serve perché uno schema `z.string().nullable()` accetta anche la STRINGA
+ * "null": il modello, a cui abbiamo chiesto di scrivere null, ogni tanto scrive
+ * le quattro lettere. Senza questo filtro il valore finisce nella colonna
+ * `city`, `needsCity` diventa falso (una stringa piena è truthy), il bot non
+ * chiede più niente e la segnalazione si raggruppa solo con le altre che hanno
+ * lo stesso identico "null". Un guasto silenzioso e difficile da vedere.
+ */
+function normalizzaCampo(valore: string | null | undefined): string | null {
+  if (valore == null) return null
+  const testo = valore.trim()
+  if (!testo) return null
+
+  const VUOTI = new Set([
+    'null', 'none', 'nil', 'undefined', 'n/a', 'na', 'n/d', 'nd', 'n.d.',
+    'non specificato', 'non indicato', 'non disponibile', 'sconosciuto',
+    'ignoto', '-', '—', '?',
+  ])
+  if (VUOTI.has(testo.toLowerCase())) return null
+
+  return testo
+}
+
 export interface TriageResult {
   reportId: string
   category: string
@@ -127,8 +152,11 @@ export async function triageReport(reportId: string): Promise<TriageResult> {
 
   // Priorità: quello che ha scritto ora > quello che sappiamo di lui > quello
   // che era già sulla segnalazione.
-  const citta = meta.city ?? cittadino?.city ?? report.city ?? null
-  const quartiere = meta.neighborhood ?? cittadino?.neighborhood ?? report.neighborhood ?? null
+  const citta =
+    normalizzaCampo(meta.city) ?? cittadino?.city ?? report.city ?? null
+  const quartiere =
+    normalizzaCampo(meta.neighborhood) ?? cittadino?.neighborhood ?? report.neighborhood ?? null
+  const luogo = normalizzaCampo(meta.location_hint) ?? report.location_hint
 
   // --- 3. Cerca un gruppo esistente ----------------------------------------
   // I filtri di città/quartiere e categoria non sono un dettaglio: due
@@ -175,7 +203,7 @@ export async function triageReport(reportId: string): Promise<TriageResult> {
       urgency: meta.urgency,
       clean_text: meta.clean_text,
       anon_text: meta.anon_text,
-      location_hint: meta.location_hint ?? report.location_hint,
+      location_hint: luogo,
       city: citta,
       neighborhood: quartiere,
       status: clusterId ? 'clustered' : 'triaged',
@@ -188,10 +216,10 @@ export async function triageReport(reportId: string): Promise<TriageResult> {
 
   // Se il testo ci ha rivelato il comune e del cittadino non lo sapevamo,
   // lo impariamo: le sue prossime segnalazioni non faranno domande.
-  if (meta.city && !cittadino?.city && report.citizen_id) {
+  if (normalizzaCampo(meta.city) && !cittadino?.city && report.citizen_id) {
     await sb
       .from('citizens')
-      .update({ city: meta.city, neighborhood: meta.neighborhood ?? cittadino?.neighborhood ?? null })
+      .update({ city: citta, neighborhood: quartiere })
       .eq('id', report.citizen_id)
   }
 
