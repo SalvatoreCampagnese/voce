@@ -8,11 +8,7 @@ import {
   CLUSTER_SUMMARY_SYSTEM_PROMPT,
   ClusterSummarySchema,
 } from '@/lib/ai/prompts'
-import {
-  CRON_TIME_BUDGET_MS,
-  MIN_REPORTS_NEW_CLUSTER,
-  SIMILARITY_NEW,
-} from '@/lib/config/constants'
+import { getSoglie } from '@/lib/config/thresholds'
 
 export interface ReclusterResult {
   esaminati: number
@@ -36,6 +32,7 @@ export interface ReclusterResult {
  * di essere ascoltato, non di sembrare un movimento.
  */
 export async function ricostruisciGruppi(): Promise<ReclusterResult> {
+  const soglie = getSoglie()
   const sb = createServiceClient()
   const inizio = Date.now()
 
@@ -69,7 +66,7 @@ export async function ricostruisciGruppi(): Promise<ReclusterResult> {
 
     // Il cron ha un tetto di durata: meglio fermarsi e riprendere al giro dopo
     // che farsi troncare a metà dalla piattaforma senza scrivere l'esito.
-    if (Date.now() - inizio > CRON_TIME_BUDGET_MS) {
+    if (Date.now() - inizio > soglie.cronTimeBudgetMs) {
       risultato.interrottoPerTempo = true
       break
     }
@@ -86,7 +83,7 @@ export async function ricostruisciGruppi(): Promise<ReclusterResult> {
 
     const { data: simili, error: erroreMatch } = await sb.rpc('match_similar_reports', {
       query_embedding: vettore.embedding as unknown as string,
-      match_threshold: SIMILARITY_NEW,
+      match_threshold: soglie.similarityNew,
       match_count: 50,
       filter_city: orfana.city ?? undefined,
       filter_neighborhood: orfana.neighborhood ?? undefined,
@@ -99,7 +96,7 @@ export async function ricostruisciGruppi(): Promise<ReclusterResult> {
     }
 
     const candidate = (simili ?? []).filter((s) => !s.cluster_id && !assorbite.has(s.report_id))
-    if (candidate.length < MIN_REPORTS_NEW_CLUSTER) continue
+    if (candidate.length < soglie.minReportsNewCluster) continue
 
     const ids = candidate.map((c) => c.report_id)
 

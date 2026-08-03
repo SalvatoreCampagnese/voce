@@ -14,11 +14,8 @@
  * per essere limitato spesso non ha ancora una sessione.
  */
 
-import {
-  RATE_LIMIT_REPORTS_PER_HOUR,
-  RATE_LIMIT_WINDOW_MINUTES,
-  type ReportChannel,
-} from '@/lib/config/constants'
+import { type ReportChannel } from '@/lib/config/constants'
+import { getSoglie } from '@/lib/config/thresholds'
 import { createServiceClient } from '@/lib/supabase/service'
 import { logger } from '@/lib/utils/logger'
 
@@ -31,7 +28,6 @@ export interface RateLimitResult {
   retryAfterSeconds: number
 }
 
-const WINDOW_MS = RATE_LIMIT_WINDOW_MINUTES * 60 * 1000
 
 /**
  * Conta le segnalazioni di un cittadino nella finestra corrente e dice se può
@@ -45,6 +41,10 @@ export async function checkReportRateLimit(
   citizenId: string,
   channel?: ReportChannel,
 ): Promise<RateLimitResult> {
+  const soglie = getSoglie()
+  const limite = soglie.rateLimitReportsPerHour
+  const WINDOW_MS = soglie.rateLimitWindowMinutes * 60 * 1000
+
   const supabase = createServiceClient()
   const windowStart = new Date(Date.now() - WINDOW_MS)
 
@@ -58,7 +58,7 @@ export async function checkReportRateLimit(
     .gte('created_at', windowStart.toISOString())
     .order('created_at', { ascending: true })
     // Una riga in più della soglia basta a decidere: non serve contarle tutte.
-    .limit(RATE_LIMIT_REPORTS_PER_HOUR + 1)
+    .limit(limite + 1)
 
   if (channel) {
     query = query.eq('channel', channel)
@@ -75,14 +75,14 @@ export async function checkReportRateLimit(
       channel,
       error,
     })
-    return { allowed: true, remaining: RATE_LIMIT_REPORTS_PER_HOUR, retryAfterSeconds: 0 }
+    return { allowed: true, remaining: limite, retryAfterSeconds: 0 }
   }
 
   const recent = data ?? []
   const used = recent.length
-  const remaining = Math.max(0, RATE_LIMIT_REPORTS_PER_HOUR - used)
+  const remaining = Math.max(0, limite - used)
 
-  if (used < RATE_LIMIT_REPORTS_PER_HOUR) {
+  if (used < limite) {
     return { allowed: true, remaining, retryAfterSeconds: 0 }
   }
 
@@ -96,7 +96,7 @@ export async function checkReportRateLimit(
     citizen_id: citizenId,
     channel,
     used,
-    limit: RATE_LIMIT_REPORTS_PER_HOUR,
+    limit: limite,
     retry_after_seconds: retryAfterSeconds,
   })
 

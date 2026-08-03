@@ -384,6 +384,60 @@ prodotto che vive su WhatsApp e Telegram: mostrarlo come una web app ne tradisce
 
 ---
 
+## Cambiare una soglia ⚖️
+
+Nessuna soglia è scritta a mano nel codice: si cambiano tutte da Vercel, senza
+ricompilare. L'elenco completo con i valori predefiniti è in `.env.example`.
+
+Le più utili durante il pilot:
+
+| Variabile | Predefinito | Quando toccarla |
+|---|---|---|
+| `SIMILARITY_NEW` | 0.60 | non nasce nessun gruppo → abbassa a 0.55 |
+| `MIN_REPORTS_NEW_CLUSTER` | 5 | poche segnalazioni in tutto → abbassa a 3 |
+| `ACTION_THRESHOLD_CITIZENS` | 5 | serve un atto per la demo → abbassa |
+| `RATE_LIMIT_REPORTS_PER_HOUR` | 5 | i tester sbattono contro il limite |
+
+L'applicazione controlla che le soglie siano coerenti **fra loro** e si rifiuta di
+partire se la combinazione non ha senso (per esempio `SIMILARITY_NEW` sotto
+`SIMILARITY_ASSIGN`, che farebbe nascere gruppi doppioni sullo stesso problema).
+
+### Le due soglie di privacy sono diverse
+
+`MIN_PUBLIC_CITIZENS` e `GEO_BLUR_METERS` vivono **anche nel database**, nella
+tabella `app_config`, ed è il database a filtrare davvero le viste pubbliche e la
+policy RLS. Cambiare solo la variabile su Vercel **non cambia la privacy**:
+cambia solo ciò che l'applicazione crede.
+
+Per cambiarle davvero servono entrambi i lati:
+
+```sql
+-- 1. nel database (Supabase → SQL Editor)
+update app_config set value_int = 4 where key = 'min_public_citizens';
+```
+
+```bash
+# 2. su Vercel, stessa cifra
+MIN_PUBLIC_CITIZENS=4
+```
+
+Poi verifica che i due lati siano d'accordo:
+
+```bash
+curl -s https://<tuo-dominio>/api/health | jq '.soglie, .problemiSoglie'
+# "ok"  → allineati
+# "incoerenti" → dice quale valore usa l'app e quale applica il database
+```
+
+`/api/health` risponde **503** finché divergono: è voluto, perché una soglia di
+privacy che l'applicazione crede diversa da quella reale non si nota da nessuna
+parte finché non espone qualcuno.
+
+Abbassare `MIN_PUBLIC_CITIZENS` sotto 2 è impedito: un gruppo pubblico
+coinciderebbe con una sola persona, che verrebbe così identificata.
+
+---
+
 ## Problemi frequenti
 
 | Sintomo                            | Causa quasi sempre                               | Rimedio                                 |

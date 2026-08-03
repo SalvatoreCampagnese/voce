@@ -27,7 +27,46 @@
 
 import { z } from 'zod'
 
-import { ACTION_THRESHOLD_CITIZENS } from './constants'
+import {
+  ACTION_THRESHOLD_CITIZENS,
+  CRON_BATCH_SIZE,
+  CRON_TIME_BUDGET_MS,
+  GEO_BLUR_METERS,
+  MIN_PUBLIC_CITIZENS,
+  MIN_REPORTS_NEW_CLUSTER,
+  RATE_LIMIT_REPORTS_PER_HOUR,
+  RATE_LIMIT_WINDOW_MINUTES,
+  SIMILARITY_ASSIGN,
+  SIMILARITY_NEW,
+} from './constants'
+
+/**
+ * Intero opzionale con valore predefinito.
+ *
+ * Una riga `NOME=` copiata da .env.example vale stringa vuota: va trattata come
+ * "non impostata", non come zero. Uno zero silenzioso su una soglia di privacy
+ * significherebbe pubblicare tutto.
+ */
+function interoConDefault(nome: string, predefinito: number, minimo = 1) {
+  return z.preprocess(
+    (value) => (value === undefined || value === '' ? predefinito : value),
+    z.coerce
+      .number()
+      .int(`${nome} deve essere un numero intero`)
+      .min(minimo, `${nome} deve essere almeno ${minimo}`),
+  )
+}
+
+/** Similarità coseno: ha senso solo fra 0 e 1. */
+function similaritaConDefault(nome: string, predefinito: number) {
+  return z.preprocess(
+    (value) => (value === undefined || value === '' ? predefinito : value),
+    z.coerce
+      .number()
+      .gt(0, `${nome} deve essere maggiore di 0`)
+      .lt(1, `${nome} deve essere minore di 1 (è una similarità coseno)`),
+  )
+}
 
 /**
  * Scorciatoia per build e typecheck senza segreti (CI su pull request).
@@ -106,15 +145,35 @@ const serverEnvSchema = z.object({
     .url('APP_URL deve essere un URL assoluto (http://localhost:3000 in locale)')
     .transform((value) => value.replace(/\/+$/, '')),
 
-  ACTION_THRESHOLD_CITIZENS: z.preprocess(
-    // Una riga `ACTION_THRESHOLD_CITIZENS=` copiata da .env.example vale stringa
-    // vuota: va trattata come "non impostata", non come zero.
-    (value) => (value === undefined || value === '' ? ACTION_THRESHOLD_CITIZENS : value),
-    z.coerce
-      .number()
-      .int('ACTION_THRESHOLD_CITIZENS deve essere un numero intero')
-      .positive('ACTION_THRESHOLD_CITIZENS deve essere maggiore di zero'),
+  // --- Soglie operative ----------------------------------------------------
+  // Tutte opzionali: senza variabile valgono i valori tarati in constants.ts.
+  // Si cambiano senza ricompilare, per ritarare il pilot da Vercel.
+  SIMILARITY_ASSIGN: similaritaConDefault('SIMILARITY_ASSIGN', SIMILARITY_ASSIGN),
+  SIMILARITY_NEW: similaritaConDefault('SIMILARITY_NEW', SIMILARITY_NEW),
+  MIN_REPORTS_NEW_CLUSTER: interoConDefault(
+    'MIN_REPORTS_NEW_CLUSTER',
+    MIN_REPORTS_NEW_CLUSTER,
+    2,
   ),
+  // Minimo 2: con 1 un gruppo pubblico coinciderebbe con una singola persona.
+  MIN_PUBLIC_CITIZENS: interoConDefault('MIN_PUBLIC_CITIZENS', MIN_PUBLIC_CITIZENS, 2),
+  ACTION_THRESHOLD_CITIZENS: interoConDefault(
+    'ACTION_THRESHOLD_CITIZENS',
+    ACTION_THRESHOLD_CITIZENS,
+  ),
+  RATE_LIMIT_REPORTS_PER_HOUR: interoConDefault(
+    'RATE_LIMIT_REPORTS_PER_HOUR',
+    RATE_LIMIT_REPORTS_PER_HOUR,
+  ),
+  RATE_LIMIT_WINDOW_MINUTES: interoConDefault(
+    'RATE_LIMIT_WINDOW_MINUTES',
+    RATE_LIMIT_WINDOW_MINUTES,
+  ),
+  // Minimo 50 m: sotto questa soglia l'arrotondamento non nasconde più un
+  // indirizzo, e la colonna esiste proprio per nasconderlo.
+  GEO_BLUR_METERS: interoConDefault('GEO_BLUR_METERS', GEO_BLUR_METERS, 50),
+  CRON_BATCH_SIZE: interoConDefault('CRON_BATCH_SIZE', CRON_BATCH_SIZE),
+  CRON_TIME_BUDGET_MS: interoConDefault('CRON_TIME_BUDGET_MS', CRON_TIME_BUDGET_MS, 1000),
 })
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>
@@ -211,9 +270,42 @@ function skippedServerEnv(): ServerEnv {
     CRON_SECRET: process.env.CRON_SECRET ?? '',
     IP_HASH_SALT: process.env.IP_HASH_SALT ?? '',
     APP_URL: (process.env.APP_URL ?? 'http://localhost:3000').replace(/\/+$/, ''),
-    ACTION_THRESHOLD_CITIZENS:
-      Number.parseInt(process.env.ACTION_THRESHOLD_CITIZENS ?? '', 10) || ACTION_THRESHOLD_CITIZENS,
+
+    // Le soglie non sono segreti: anche con la validazione saltata restano i
+    // valori tarati, così una build di CI si comporta come la produzione.
+    SIMILARITY_ASSIGN: numeroDaEnv(process.env.SIMILARITY_ASSIGN, SIMILARITY_ASSIGN),
+    SIMILARITY_NEW: numeroDaEnv(process.env.SIMILARITY_NEW, SIMILARITY_NEW),
+    MIN_REPORTS_NEW_CLUSTER: interoDaEnv(
+      process.env.MIN_REPORTS_NEW_CLUSTER,
+      MIN_REPORTS_NEW_CLUSTER,
+    ),
+    MIN_PUBLIC_CITIZENS: interoDaEnv(process.env.MIN_PUBLIC_CITIZENS, MIN_PUBLIC_CITIZENS),
+    ACTION_THRESHOLD_CITIZENS: interoDaEnv(
+      process.env.ACTION_THRESHOLD_CITIZENS,
+      ACTION_THRESHOLD_CITIZENS,
+    ),
+    RATE_LIMIT_REPORTS_PER_HOUR: interoDaEnv(
+      process.env.RATE_LIMIT_REPORTS_PER_HOUR,
+      RATE_LIMIT_REPORTS_PER_HOUR,
+    ),
+    RATE_LIMIT_WINDOW_MINUTES: interoDaEnv(
+      process.env.RATE_LIMIT_WINDOW_MINUTES,
+      RATE_LIMIT_WINDOW_MINUTES,
+    ),
+    GEO_BLUR_METERS: interoDaEnv(process.env.GEO_BLUR_METERS, GEO_BLUR_METERS),
+    CRON_BATCH_SIZE: interoDaEnv(process.env.CRON_BATCH_SIZE, CRON_BATCH_SIZE),
+    CRON_TIME_BUDGET_MS: interoDaEnv(process.env.CRON_TIME_BUDGET_MS, CRON_TIME_BUDGET_MS),
   }
+}
+
+function interoDaEnv(grezzo: string | undefined, predefinito: number): number {
+  const n = Number.parseInt(grezzo ?? '', 10)
+  return Number.isFinite(n) && n > 0 ? n : predefinito
+}
+
+function numeroDaEnv(grezzo: string | undefined, predefinito: number): number {
+  const n = Number.parseFloat(grezzo ?? '')
+  return Number.isFinite(n) ? n : predefinito
 }
 
 function assertNotBrowser(): void {

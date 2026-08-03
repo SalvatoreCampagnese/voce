@@ -122,6 +122,27 @@ export type Database = {
           },
         ]
       }
+      app_config: {
+        Row: {
+          description: string
+          key: string
+          updated_at: string
+          value_int: number
+        }
+        Insert: {
+          description: string
+          key: string
+          updated_at?: string
+          value_int: number
+        }
+        Update: {
+          description?: string
+          key?: string
+          updated_at?: string
+          value_int?: number
+        }
+        Relationships: []
+      }
       citizens: {
         Row: {
           auth_user_id: string | null
@@ -766,6 +787,7 @@ export type Database = {
             Returns: string
           }
       blur_point: { Args: { meters?: number; p: unknown }; Returns: unknown }
+      config_int: { Args: { config_key: string }; Returns: number }
       count_recent_reports: {
         Args: { target_citizen: string; window_minutes?: number }
         Returns: number
@@ -904,6 +926,13 @@ export type Database = {
         Returns: boolean
       }
       geomfromewkt: { Args: { "": string }; Returns: unknown }
+      get_privacy_config: {
+        Args: never
+        Returns: {
+          key: string
+          value_int: number
+        }[]
+      }
       gettransactionid: { Args: never; Returns: unknown }
       longtransactionsenabled: { Args: never; Returns: boolean }
       match_similar_reports: {

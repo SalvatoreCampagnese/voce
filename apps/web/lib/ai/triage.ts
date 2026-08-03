@@ -10,10 +10,7 @@ import {
   stimaCostoEuro,
 } from '@/lib/ai/openai'
 import { TRIAGE_SYSTEM_PROMPT, TriageSchema, type TriageOutput } from '@/lib/ai/prompts'
-import {
-  ACTION_THRESHOLD_CITIZENS,
-  SIMILARITY_ASSIGN,
-} from '@/lib/config/constants'
+import { getSoglie } from '@/lib/config/thresholds'
 
 export interface TriageResult {
   reportId: string
@@ -122,7 +119,7 @@ export async function triageReport(reportId: string): Promise<TriageResult> {
   // problema, per quanto i loro testi si somiglino.
   const { data: simili, error: erroreMatch } = await sb.rpc('match_similar_reports', {
     query_embedding: JSON.stringify(vettore),
-    match_threshold: SIMILARITY_ASSIGN,
+    match_threshold: getSoglie().similarityAssign,
     match_count: 20,
     // I parametri della RPC accettano `undefined` per "nessun filtro": una
     // colonna vuota nel database è `null`, che qui va convertito.
@@ -206,7 +203,7 @@ export async function valutaSogliaAzione(clusterId: string): Promise<void> {
     .single()
 
   if (!gruppo || gruppo.status !== 'emergente') return
-  if ((gruppo.citizens_count ?? 0) < ACTION_THRESHOLD_CITIZENS) return
+  if ((gruppo.citizens_count ?? 0) < getSoglie().actionThresholdCitizens) return
 
   await sb
     .from('clusters')

@@ -183,14 +183,33 @@ corretto rispetta questi punti:
 9. **Contatori cluster**: `reports_count` e `citizens_count` (cittadini **distinti**)
    mantenuti da trigger. Attenzione al costo: niente due subquery per riga.
 
-### Soglie operative (costanti, non magic number sparsi)
+### Soglie operative (parametrizzate, non magic number sparsi)
 
-Vivono in `apps/web/lib/config/constants.ts` e sono ripetute qui come contratto:
+Nessuna soglia è scritta a mano nel codice. Tre livelli, in quest'ordine:
+
+| File | Ruolo |
+|---|---|
+| `apps/web/lib/config/constants.ts` | valori **predefiniti**, tarati su dati veri. File puro |
+| `apps/web/lib/config/env.ts` | legge e valida le variabili d'ambiente |
+| `apps/web/lib/config/thresholds.ts` | valori **effettivi** (`getSoglie()`) + coerenza fra soglie |
+
+**Il codice server importa sempre da `thresholds.ts`**, mai da `constants.ts`:
+importare le costanti significa ignorare in silenzio una variabile impostata su
+Vercel. `getSoglie()` rifiuta l'avvio se le soglie sono incoerenti fra loro
+(es. `SIMILARITY_NEW` sotto `SIMILARITY_ASSIGN`, o `MIN_PUBLIC_CITIZENS` a 1).
+
+**Le due soglie di privacy vivono anche nel database**, nella tabella
+`app_config`, ed è il database a filtrare davvero le viste pubbliche e la policy
+RLS su `clusters` (via `config_int()`). Cambiare solo la variabile d'ambiente non
+cambia la privacy: cambia solo ciò che l'applicazione crede.
+`/api/health` confronta i due lati e risponde **503** se divergono.
+
+Valori predefiniti:
 
 | Costante | Valore MVP | Significato |
 |---|---|---|
-| `SIMILARITY_ASSIGN` | 0.82 | soglia per assegnare un report a un cluster esistente |
-| `SIMILARITY_NEW` | 0.84 | soglia per formare un cluster nuovo |
+| `SIMILARITY_ASSIGN` | 0.55 | soglia per assegnare un report a un cluster esistente (misurata) |
+| `SIMILARITY_NEW` | 0.60 | soglia per formare un cluster nuovo (misurata) |
 | `MIN_REPORTS_NEW_CLUSTER` | 5 | report simili orfani necessari a creare un cluster |
 | `MIN_PUBLIC_CITIZENS` | 3 | cittadini distinti prima che un cluster diventi pubblico |
 | `ACTION_THRESHOLD_CITIZENS` | 5 | cittadini distinti che fanno scattare la generazione atti |

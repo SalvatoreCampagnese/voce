@@ -1,13 +1,22 @@
 /**
- * Soglie operative di VOCE — contratto di build §5.
+ * Valori PREDEFINITI delle soglie di VOCE — contratto di build §5.
  *
- * Questa è l'unica fonte di verità: nessun numero magico sparso nelle route,
- * nei prompt o nelle query SQL. Chi cambia una soglia cambia questo file e
- * aggiorna `THRESHOLDS_LAST_TUNED`.
+ * ⚠️ Il codice server NON deve importare da qui: deve usare `getSoglie()` di
+ * `lib/config/thresholds.ts`, che applica le eventuali variabili d'ambiente.
+ * Importare direttamente queste costanti significa ignorare in silenzio una
+ * soglia impostata su Vercel — cioè tarare un pilot e non accorgersi che non è
+ * cambiato niente.
+ *
+ * I tre file, in ordine:
+ *   constants.ts   → i valori predefiniti (questo file), tarati su dati veri
+ *   env.ts         → legge e valida le variabili d'ambiente
+ *   thresholds.ts  → i valori effettivi + i controlli di coerenza fra soglie
  *
  * Il file è puro: nessun import, nessun accesso a `process.env`. Può quindi
  * essere importato anche da un Client Component senza trascinare segreti nel
  * bundle del browser.
+ *
+ * Chi ritara una soglia aggiorna il valore qui e `THRESHOLDS_LAST_TUNED`.
  */
 
 /**

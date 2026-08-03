@@ -4,7 +4,7 @@ import { assertCronSecret, isUnauthorizedError } from '@/lib/security/internal'
 import { createServiceClient } from '@/lib/supabase/service'
 import { triageReport } from '@/lib/ai/triage'
 import { logger } from '@/lib/utils/logger'
-import { CRON_BATCH_SIZE, CRON_TIME_BUDGET_MS } from '@/lib/config/constants'
+import { getSoglie } from '@/lib/config/thresholds'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
     throw errore
   }
 
+  const soglie = getSoglie()
   const sb = createServiceClient()
   const inizio = Date.now()
   let recuperate = 0
@@ -44,12 +45,12 @@ export async function GET(req: NextRequest) {
       .eq('status', 'nuovo')
       .lt('created_at', unMinutoFa)
       .order('created_at', { ascending: true })
-      .limit(CRON_BATCH_SIZE)
+      .limit(soglie.cronBatchSize)
 
     if (error) throw new Error(error.message)
 
     for (const report of arretrate ?? []) {
-      if (Date.now() - inizio > CRON_TIME_BUDGET_MS) break
+      if (Date.now() - inizio > soglie.cronTimeBudgetMs) break
       try {
         await triageReport(report.id)
         recuperate += 1
