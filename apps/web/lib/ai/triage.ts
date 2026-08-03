@@ -19,6 +19,8 @@ export interface TriageResult {
   clustered: boolean
   clusterId: string | null
   actionable: boolean
+  /** Il comune resta ignoto: senza, il raggruppamento geografico non funziona. */
+  needsCity: boolean
 }
 
 /**
@@ -36,13 +38,22 @@ export async function triageReport(reportId: string): Promise<TriageResult> {
 
   const { data: report, error: erroreLettura } = await sb
     .from('reports')
-    .select('*')
+    // La FK va nominata: da quando citizens.pending_city_report_id punta a
+    // reports, fra le due tabelle ci sono DUE relazioni e PostgREST non sa
+    // quale intendi (PGRST201). Senza il nome, l'intero triage fallisce.
+    .select('*, citizens!reports_citizen_id_fkey(city, neighborhood)')
     .eq('id', reportId)
     .single()
 
   if (erroreLettura || !report) {
     throw new Error(`Segnalazione ${reportId} non trovata: ${erroreLettura?.message}`)
   }
+
+  // Il comune del cittadino, se lo conosciamo già da una segnalazione
+  // precedente. Si chiede una volta sola: chiederlo a ogni messaggio sarebbe
+  // un modo sicuro di far smettere di scrivere le persone.
+  const cittadino = (report as { citizens?: { city: string | null; neighborhood: string | null } | null })
+    .citizens
 
   // --- 1. Estrazione strutturata -------------------------------------------
   const completamento = await openai.chat.completions.parse({
@@ -88,6 +99,7 @@ export async function triageReport(reportId: string): Promise<TriageResult> {
       clustered: false,
       clusterId: null,
       actionable: false,
+      needsCity: false,
     }
   }
 
@@ -113,6 +125,11 @@ export async function triageReport(reportId: string): Promise<TriageResult> {
     report_id: reportId,
   })
 
+  // Priorità: quello che ha scritto ora > quello che sappiamo di lui > quello
+  // che era già sulla segnalazione.
+  const citta = meta.city ?? cittadino?.city ?? report.city ?? null
+  const quartiere = meta.neighborhood ?? cittadino?.neighborhood ?? report.neighborhood ?? null
+
   // --- 3. Cerca un gruppo esistente ----------------------------------------
   // I filtri di città/quartiere e categoria non sono un dettaglio: due
   // segnalazioni di "buche in strada" in quartieri diversi NON sono lo stesso
@@ -123,8 +140,8 @@ export async function triageReport(reportId: string): Promise<TriageResult> {
     match_count: 20,
     // I parametri della RPC accettano `undefined` per "nessun filtro": una
     // colonna vuota nel database è `null`, che qui va convertito.
-    filter_city: report.city ?? undefined,
-    filter_neighborhood: report.neighborhood ?? undefined,
+    filter_city: citta ?? undefined,
+    filter_neighborhood: quartiere ?? undefined,
     filter_category: meta.category,
   })
 
@@ -159,6 +176,8 @@ export async function triageReport(reportId: string): Promise<TriageResult> {
       clean_text: meta.clean_text,
       anon_text: meta.anon_text,
       location_hint: meta.location_hint ?? report.location_hint,
+      city: citta,
+      neighborhood: quartiere,
       status: clusterId ? 'clustered' : 'triaged',
       cluster_id: clusterId,
       triaged_at: new Date().toISOString(),
@@ -166,6 +185,15 @@ export async function triageReport(reportId: string): Promise<TriageResult> {
     .eq('id', reportId)
 
   if (erroreUpdate) throw new Error(`Salvataggio triage fallito: ${erroreUpdate.message}`)
+
+  // Se il testo ci ha rivelato il comune e del cittadino non lo sapevamo,
+  // lo impariamo: le sue prossime segnalazioni non faranno domande.
+  if (meta.city && !cittadino?.city && report.citizen_id) {
+    await sb
+      .from('citizens')
+      .update({ city: meta.city, neighborhood: meta.neighborhood ?? cittadino?.neighborhood ?? null })
+      .eq('id', report.citizen_id)
+  }
 
   logger.info('triage.completato', {
     report_id: reportId,
@@ -184,6 +212,7 @@ export async function triageReport(reportId: string): Promise<TriageResult> {
     clustered: Boolean(clusterId),
     clusterId,
     actionable: true,
+    needsCity: !citta,
   }
 }
 

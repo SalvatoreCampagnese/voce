@@ -5,6 +5,7 @@ import { serverEnv } from '@/lib/config/env'
 import { logger } from '@/lib/utils/logger'
 import { checkReportRateLimit } from '@/lib/security/rate-limit'
 import { triageReport } from '@/lib/ai/triage'
+import { aggiornaLuogoSegnalazione, estraiLuogo } from '@/lib/ai/luogo'
 import { MESSAGGI, inviaMessaggioTelegram } from '@/lib/channels/telegram'
 
 // L'SDK OpenAI e il client Supabase con service role girano su Node, non su edge.
@@ -65,11 +66,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true })
   }
 
-  if (testo.length < LUNGHEZZA_MINIMA) {
-    await inviaMessaggioTelegram(chatId, MESSAGGI.troppoBreve)
-    return NextResponse.json({ ok: true })
-  }
-
   const sb = createServiceClient()
 
   try {
@@ -84,11 +80,58 @@ export async function POST(req: NextRequest) {
         },
         { onConflict: 'telegram_id' },
       )
-      .select('id')
+      .select('id, pending_city_report_id')
       .single()
 
     if (erroreCittadino || !cittadino) {
       throw new Error(`upsert cittadino fallito: ${erroreCittadino?.message}`)
+    }
+
+    // --- Risposta a «in che comune?» ---------------------------------------
+    // Se stiamo aspettando un comune, questo messaggio è quasi sempre la
+    // risposta. Ma può anche essere una nuova segnalazione da parte di chi ha
+    // ignorato la domanda: in quel caso non va persa.
+    if (cittadino.pending_city_report_id) {
+      const luogo = await estraiLuogo(testo)
+
+      if (luogo?.is_place && luogo.city) {
+        const { clusterId } = await aggiornaLuogoSegnalazione(
+          cittadino.pending_city_report_id,
+          luogo.city,
+          luogo.neighborhood,
+        )
+
+        await inviaMessaggioTelegram(
+          chatId,
+          clusterId
+            ? MESSAGGI.comuneUnitoAGruppo(luogo.city)
+            : MESSAGGI.comuneRegistrato(luogo.city, luogo.neighborhood),
+        )
+        return NextResponse.json({ ok: true })
+      }
+
+      // Non è un luogo. Se è abbastanza lungo da essere un racconto, lo
+      // trattiamo come una nuova segnalazione e smettiamo di insistere: il
+      // comune lo chiederemo un'altra volta. Meglio perdere un dato che
+      // ignorare una persona che sta parlando.
+      if (testo.length >= LUNGHEZZA_MINIMA) {
+        await sb
+          .from('citizens')
+          .update({ pending_city_report_id: null })
+          .eq('id', cittadino.id)
+        // e si prosegue con il flusso normale di segnalazione
+      } else {
+        await inviaMessaggioTelegram(chatId, MESSAGGI.comuneNonCapito)
+        return NextResponse.json({ ok: true })
+      }
+    }
+
+    // Il controllo di lunghezza sta QUI e non prima: una risposta come
+    // «Milano» è di sei caratteri, e messo più in alto rifiutava proprio le
+    // risposte alla domanda che avevamo appena fatto noi.
+    if (testo.length < LUNGHEZZA_MINIMA) {
+      await inviaMessaggioTelegram(chatId, MESSAGGI.troppoBreve)
+      return NextResponse.json({ ok: true })
     }
 
     // --- Limite anti abuso -------------------------------------------------
@@ -140,7 +183,20 @@ export async function POST(req: NextRequest) {
     // --- Lavoro pesante dopo la risposta HTTP ------------------------------
     after(async () => {
       try {
-        await triageReport(report.id)
+        const esito = await triageReport(report.id)
+
+        // Il comune non è né nel testo né fra ciò che sappiamo del cittadino:
+        // senza, questa segnalazione non potrà mai unirsi a quelle dei vicini.
+        // Si chiede adesso, una volta sola, e la risposta arriverà al prossimo
+        // messaggio (vedi pending_city_report_id).
+        if (esito.actionable && esito.needsCity) {
+          await sb
+            .from('citizens')
+            .update({ pending_city_report_id: report.id })
+            .eq('id', cittadino.id)
+
+          await inviaMessaggioTelegram(chatId, MESSAGGI.chiediComune)
+        }
       } catch (errore) {
         // Non si rilancia: la segnalazione è salva e il cron la riprenderà.
         logger.error('telegram.triage_fallito', {

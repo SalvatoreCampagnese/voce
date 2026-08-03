@@ -154,6 +154,7 @@ export type Database = {
           is_synthetic: boolean
           last_seen_at: string | null
           neighborhood: string | null
+          pending_city_report_id: string | null
           phone_e164: string | null
           postal_code: string | null
           telegram_id: number | null
@@ -168,6 +169,7 @@ export type Database = {
           is_synthetic?: boolean
           last_seen_at?: string | null
           neighborhood?: string | null
+          pending_city_report_id?: string | null
           phone_e164?: string | null
           postal_code?: string | null
           telegram_id?: number | null
@@ -182,11 +184,27 @@ export type Database = {
           is_synthetic?: boolean
           last_seen_at?: string | null
           neighborhood?: string | null
+          pending_city_report_id?: string | null
           phone_e164?: string | null
           postal_code?: string | null
           telegram_id?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "citizens_pending_city_report_id_fkey"
+            columns: ["pending_city_report_id"]
+            isOneToOne: false
+            referencedRelation: "public_cluster_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "citizens_pending_city_report_id_fkey"
+            columns: ["pending_city_report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       clusters: {
         Row: {

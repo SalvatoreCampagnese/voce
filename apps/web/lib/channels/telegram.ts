@@ -69,6 +69,30 @@ export const MESSAGGI = {
   troppoBreve:
     'Ho bisogno di qualche parola in più per capire.\n\nRaccontami cosa è successo, dove, e da quanto tempo va avanti.',
 
+  // Si chiede il comune una volta sola, e si spiega perché: una domanda senza
+  // motivo sembra burocrazia, con il motivo diventa collaborazione.
+  chiediComune:
+    'Una cosa sola e ho finito: in che comune succede?\n\n' +
+    'Mi serve per confrontare la tua segnalazione con quelle di chi vive vicino a te.\n\n' +
+    'Rispondi anche solo con il nome, per esempio: Milano',
+
+  comuneRegistrato: (citta: string, quartiere: string | null) =>
+    [
+      `Perfetto, ${citta}${quartiere ? ` — zona ${quartiere}` : ''}.`,
+      '',
+      'Non te lo chiederò più: vale anche per le tue prossime segnalazioni.',
+    ].join('\n'),
+
+  comuneUnitoAGruppo: (citta: string) =>
+    [
+      `Perfetto, ${citta}.`,
+      '',
+      'La tua segnalazione si è unita ad altre della stessa zona: non sei da solo.',
+    ].join('\n'),
+
+  comuneNonCapito:
+    'Non ho riconosciuto il comune.\n\nScrivimi solo il nome, per esempio: Milano',
+
   troppeSegnalazioni: (minuti: number) =>
     [
       'Hai inviato diverse segnalazioni in poco tempo.',
