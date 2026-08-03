@@ -9,18 +9,29 @@
 -- un account, e passerebbe da un 404 a una schermata di accesso impossibile.
 -- Serve invece un indirizzo che vale solo per quella segnalazione.
 --
--- Il token è di 16 byte casuali (128 bit): non si indovina e non si enumera.
+-- Il token viene da `gen_random_uuid()` senza trattini: 32 caratteri esadecimali,
+-- 122 bit di casualità crittografica. Non si indovina e non si enumera.
 -- Chi ha il link vede lo stato della PROPRIA segnalazione — nessun dato di
 -- altri, nessun elenco, nessuna identità. Il link glielo mandiamo solo a lui,
 -- sul canale da cui ha scritto.
+--
+-- PERCHÉ NON `gen_random_bytes`, che sarebbe la scelta ovvia:
+-- appartiene a pgcrypto, e pgcrypto NON sta nello stesso schema ovunque. In
+-- locale `create extension` lo mette in `public`; su Supabase cloud è
+-- preinstallato in `extensions`, fuori dal search_path delle migration. Il
+-- risultato è una migration che passa in locale e fallisce in produzione con
+-- «function gen_random_bytes(integer) does not exist».
+-- `gen_random_uuid()` è invece nel core di Postgres dalla 13: c'è sempre,
+-- in qualunque schema si trovi pgcrypto.
 -- ============================================================================
 
 alter table public.reports
-  add column public_token text unique default encode(gen_random_bytes(16), 'hex');
+  add column public_token text unique
+  default replace(gen_random_uuid()::text, '-', '');
 
 -- Le segnalazioni già esistenti ne ricevono uno adesso.
 update public.reports
-   set public_token = encode(gen_random_bytes(16), 'hex')
+   set public_token = replace(gen_random_uuid()::text, '-', '')
  where public_token is null;
 
 alter table public.reports alter column public_token set not null;

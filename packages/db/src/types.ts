@@ -352,6 +352,7 @@ export type Database = {
           location_hint: string | null
           moderation_flagged: boolean
           neighborhood: string | null
+          public_token: string
           raw_media_urls: string[]
           raw_text: string
           status: Database["public"]["Enums"]["report_status"]
@@ -374,6 +375,7 @@ export type Database = {
           location_hint?: string | null
           moderation_flagged?: boolean
           neighborhood?: string | null
+          public_token?: string
           raw_media_urls?: string[]
           raw_text: string
           status?: Database["public"]["Enums"]["report_status"]
@@ -396,6 +398,7 @@ export type Database = {
           location_hint?: string | null
           moderation_flagged?: boolean
           neighborhood?: string | null
+          public_token?: string
           raw_media_urls?: string[]
           raw_text?: string
           status?: Database["public"]["Enums"]["report_status"]
@@ -949,6 +952,24 @@ export type Database = {
         Returns: {
           key: string
           value_int: number
+        }[]
+      }
+      get_report_status: {
+        Args: { token: string }
+        Returns: {
+          anon_text: string
+          category: string
+          citta: string
+          cluster_citizens: number
+          cluster_id: string
+          cluster_is_public: boolean
+          cluster_reports: number
+          cluster_status: Database["public"]["Enums"]["cluster_status"]
+          cluster_title: string
+          created_at: string
+          quartiere: string
+          status: Database["public"]["Enums"]["report_status"]
+          urgency: number
         }[]
       }
       gettransactionid: { Args: never; Returns: unknown }

@@ -63,7 +63,7 @@ export const MESSAGGI = {
       'La sto confrontando con quelle di altri cittadini della tua zona.',
       'Ti scrivo appena diventa parte di un\'azione collettiva.',
       '',
-      `Puoi seguire tutto qui: ${url}`,
+      `Segui la tua segnalazione qui: ${url}`,
     ].join('\n'),
 
   troppoBreve:

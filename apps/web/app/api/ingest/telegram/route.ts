@@ -156,7 +156,7 @@ export async function POST(req: NextRequest) {
         raw_text: testo,
         status: 'nuovo',
       })
-      .select('id')
+      .select('id, public_token')
       .single()
 
     if (erroreReport) {
@@ -177,7 +177,7 @@ export async function POST(req: NextRequest) {
     // --- Risposta immediata al cittadino -----------------------------------
     await inviaMessaggioTelegram(
       chatId,
-      MESSAGGI.ricevuta(`${serverEnv.APP_URL}/le-mie-segnalazioni`),
+      MESSAGGI.ricevuta(`${serverEnv.APP_URL}/segnalazione/${report.public_token}`),
     )
 
     // --- Lavoro pesante dopo la risposta HTTP ------------------------------
