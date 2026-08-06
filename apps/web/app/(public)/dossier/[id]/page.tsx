@@ -83,11 +83,24 @@ export default async function AttoPage({ params }: PageProps<'/dossier/[id]'>) {
             atto viene inviato senza che una persona lo abbia letto e approvato.
           </CalloutAvviso>
 
-          <article className="prose-voce mt-8">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {atto.body_markdown ?? ''}
-            </ReactMarkdown>
-          </article>
+          {atto.body_markdown ? (
+            <article className="prose-voce mt-8">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {atto.body_markdown}
+              </ReactMarkdown>
+            </article>
+          ) : (
+            // Il testo esiste, ma non è ancora stato letto da una persona.
+            // Pubblicarlo prima significherebbe mettere online un documento
+            // scritto da una macchina, che può contenere fatti non verificati
+            // o dati di persone che non hanno segnalato nulla.
+            <CalloutAvviso tono="info" titolo="Testo non ancora pubblicato" className="mt-8">
+              La bozza è stata preparata ma nessuno l’ha ancora revisionata. Il
+              testo diventa pubblico solo dopo che una persona se ne è assunta
+              la responsabilità, con nome e cognome. Fino ad allora restano
+              visibili il tipo di atto, il destinatario e il gruppo di origine.
+            </CalloutAvviso>
+          )}
         </div>
 
         <aside className="flex flex-col gap-6">

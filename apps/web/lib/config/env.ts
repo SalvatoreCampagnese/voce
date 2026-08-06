@@ -145,6 +145,33 @@ const serverEnvSchema = z.object({
     .url('APP_URL deve essere un URL assoluto (http://localhost:3000 in locale)')
     .transform((value) => value.replace(/\/+$/, '')),
 
+  // --- Posta elettronica (PLAN2 §1.1) --------------------------------------
+  // Chi segnala dal sito lascia un'email, non un contatto Telegram: senza un
+  // canale di posta, la promessa «ti scrivo appena diventa un'azione» non è
+  // mantenibile per quelle persone.
+  //
+  // Tutte e tre OPZIONALI, e non per pigrizia: il repo non può aggiungere
+  // dipendenze (contratto §1), quindi l'invio passa da una semplice fetch a un
+  // endpoint HTTP compatibile con Resend. Finché non sono configurate, le
+  // notifiche via email NON vengono perse: restano in tabella con `failed_at`
+  // e la ragione, e compaiono nel pannello di amministrazione. Un canale
+  // mancante deve essere visibile, non silenzioso.
+  EMAIL_API_URL: z.preprocess(
+    (value) => (value === undefined || value === '' ? '' : value),
+    z.union([z.literal(''), z.url('EMAIL_API_URL deve essere un URL assoluto')]),
+  ),
+  EMAIL_API_KEY: z.preprocess(
+    (value) => (value === undefined ? '' : value),
+    z.string(),
+  ),
+  EMAIL_FROM: z.preprocess(
+    (value) => (value === undefined || value === '' ? '' : value),
+    z.union([
+      z.literal(''),
+      z.string().min(3, 'EMAIL_FROM va scritto come "VOCE <voce@dominio.it>"'),
+    ]),
+  ),
+
   // --- Soglie operative ----------------------------------------------------
   // Tutte opzionali: senza variabile valgono i valori tarati in constants.ts.
   // Si cambiano senza ricompilare, per ritarare il pilot da Vercel.
@@ -270,6 +297,10 @@ function skippedServerEnv(): ServerEnv {
     CRON_SECRET: process.env.CRON_SECRET ?? '',
     IP_HASH_SALT: process.env.IP_HASH_SALT ?? '',
     APP_URL: (process.env.APP_URL ?? 'http://localhost:3000').replace(/\/+$/, ''),
+
+    EMAIL_API_URL: process.env.EMAIL_API_URL ?? '',
+    EMAIL_API_KEY: process.env.EMAIL_API_KEY ?? '',
+    EMAIL_FROM: process.env.EMAIL_FROM ?? '',
 
     // Le soglie non sono segreti: anche con la validazione saltata restano i
     // valori tarati, così una build di CI si comporta come la produzione.

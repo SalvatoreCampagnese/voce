@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { REPORT_CATEGORIES } from '@voce/db'
 
 /**
  * Schema dell'estrazione strutturata del triage.
@@ -38,6 +37,17 @@ export const TriageSchema = z.object({
   is_actionable: z
     .boolean()
     .describe('false per saluti, prove, messaggi senza contenuto civico'),
+  original_language: z
+    .string()
+    .describe(
+      'Codice ISO 639-1 della lingua in cui ha scritto il cittadino: "it", "ar", "es", "ro", "zh"…',
+    ),
+  missing_detail: z
+    .string()
+    .nullable()
+    .describe(
+      'L\'unica domanda breve, in italiano, che manca per rendere utile la segnalazione. null se non manca niente.',
+    ),
 })
 
 export type TriageOutput = z.infer<typeof TriageSchema>
@@ -92,6 +102,17 @@ REGOLE INDEROGABILI
 
 6. is_actionable: false se il messaggio è un saluto, una prova, una domanda sul servizio o non contiene alcuna segnalazione. In quel caso gli altri campi possono essere generici.
 
+7. original_language: la lingua in cui la persona ha SCRITTO, in codice ISO 639-1 di due lettere minuscole ("it", "ar", "es", "ro", "uk", "zh", "bn"). Scrivi "it" anche quando il testo è in dialetto italiano o in italiano scorretto: resta italiano.
+   Questo campo NON cambia nulla del resto del tuo lavoro: clean_text e anon_text vanno scritti SEMPRE in italiano, qualunque sia la lingua di partenza.
+   Il motivo è tecnico e vincolante: le segnalazioni si confrontano fra loro in una lingua sola, e due gruppi paralleli sulla stessa buca non raggiungono mai la soglia. Gli atti, poi, si scrivono a una Procura o a un Responsabile della trasparenza, e si scrivono in italiano.
+   Traducendo, riporta i fatti e basta: non interpretare, non arrotondare, non rendere «più chiaro» ciò che era ambiguo. Il testo originale resta salvato ed è citabile — è la rete contro una traduzione che sposta il senso e finisce dentro un atto.
+
+8. missing_detail: LA singola domanda che, se avesse una risposta, renderebbe utile questa segnalazione. Scrivila in italiano, breve, una domanda sola.
+   Esempi della forma attesa: "Da quanto tempo va avanti?", "In che via succede?", "È successo di giorno o di notte?", "Quante volte è capitato?".
+   Scrivi null se la segnalazione è già completa: chiedere per abitudine è il modo più affidabile di far smettere di scrivere una persona.
+   Il limite da non superare: VOCE aiuta a raccontare, non racconta al posto del cittadino. La domanda chiede un FATTO che manca; non suggerisce la risposta, non mette parole in bocca a nessuno, non insinua una causa o un colpevole.
+   Domanda buona: "In che via succede?". Domanda cattiva: "È colpa del Comune che non fa manutenzione?".
+
 Rispondi solo con i campi richiesti.`
 
 /**
@@ -132,3 +153,62 @@ Produci:
 - summary: due o tre frasi che descrivono il problema ricorrente, il luogo e da quanto dura. Solo elementi presenti in più segnalazioni. Se una circostanza compare in una sola segnalazione, non entra nel riassunto.
 
 Non citare nomi di persona. Non quantificare ciò che non sai: scrivi "diverse segnalazioni riportano" e non "il 70% dei cittadini".`
+
+/**
+ * Categorie ammesse per il secondo passaggio di anonimizzazione (PLAN2 §5.1).
+ *
+ * È un elenco CHIUSO di proposito: al modello si chiede che cosa ha tolto, mai
+ * il valore che ha tolto. Registrare che si è oscurato «via Ferrari 3»
+ * scrivendo «via Ferrari 3» in un'altra colonna non è anonimizzare, è spostare.
+ */
+export const CATEGORIE_ANONIMATO = [
+  'nome_persona',
+  'cognome',
+  'ruolo_identificante',
+  'civico',
+  'contatto',
+  'altro_identificante',
+] as const
+
+export const RevisioneAnonimatoSchema = z.object({
+  testo: z
+    .string()
+    .describe('Il testo ripulito. Identico a quello ricevuto se non c\'era niente da togliere.'),
+  modifiche: z
+    .array(z.enum(CATEGORIE_ANONIMATO))
+    .describe('Una voce per ogni elemento rimosso. Mai il valore rimosso, solo la categoria.'),
+})
+
+export type RevisioneAnonimatoOutput = z.infer<typeof RevisioneAnonimatoSchema>
+
+/**
+ * Secondo passaggio di anonimizzazione.
+ *
+ * Il prompt fa UNA cosa sola. È il punto: un modello a cui si chiede anche di
+ * riassumere o di correggere lo stile smette di cercare, e la seconda rete
+ * diventa una copia della prima.
+ */
+export const ANONIMIZZA_SYSTEM_PROMPT = `Sei l'ultimo controllo prima che un testo diventi pubblico.
+
+Ricevi un testo già ripulito una prima volta e già passato da regole automatiche. Il tuo unico compito è cercare ciò che è sopravvissuto e identifica ancora una persona.
+
+Questo testo comparirà su una pagina web aperta e indicizzabile, e potrà essere citato dentro un atto indirizzato a un'amministrazione o a una Procura. Chi l'ha scritto si è fidato di noi.
+
+CERCA E TOGLI
+- nomi e cognomi di persona, di chi scrive e di terzi (i nomi di vie, piazze, scuole, ospedali e quartieri NON sono nomi di persona: restano)
+- ruoli che identificano una persona sola: "il custode della scuola Manzoni", "la vigilessa del turno di notte", "il medico di base di mia madre"
+- numeri civici precisi: "in via Roma" resta, "via Roma 15" diventa "in via Roma"
+- recapiti di ogni tipo: telefoni, email, targhe, codici fiscali, coordinate bancarie
+- dettagli che, messi insieme, individuano una persona sola: "l'unica famiglia rom del palazzo", "il negozio di alimentari all'angolo con la mia finestra sopra"
+
+NON TOGLIERE
+- il luogo del problema senza numero civico: serve a far ritrovare fra loro i vicini, ed è il motivo per cui questo servizio esiste
+- date, durate, orari, quantità, condizioni di salute descritte in modo generico
+- i nomi di enti, uffici, aziende e strutture pubbliche: un ospedale non è una persona
+- le espressioni fra parentesi quadre già presenti, come [contatto omesso]: le hanno messe le regole automatiche, lasciale dove sono
+
+REGOLE DI SCRITTURA
+- Non aggiungere NULLA. Non riassumere, non riscrivere, non correggere lo stile, non spiegare, non commentare.
+- Togli il minimo indispensabile e ricuci la frase perché resti leggibile in italiano corretto.
+- Se non c'è niente da togliere, restituisci il testo identico e modifiche vuoto.
+- In modifiche scrivi solo le categorie di ciò che hai rimosso, una voce per ogni rimozione. Non riportare mai il valore rimosso: finirebbe in un registro, e sarebbe lo stesso dato in un posto diverso.`

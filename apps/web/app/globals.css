@@ -64,6 +64,21 @@
   --color-danger-bg: #fdecef;
   --color-info-bg: #eef1f4;
 
+  /* Testo sui fondi tenui qui sopra.
+     I colori pieni sono tarati sul bianco, non sulla loro pastiglia: sul
+     rispettivo *-bg scendono sotto la soglia di 4.5 e non sono utilizzabili
+     per testo normale (le pastiglie di stato sono 12px semibold, quindi non
+     contano come testo grande).
+       success  #008758 su #e8f5ef → 4.07
+       warning  #a66300 su #fdf4e4 → 4.37
+       danger   #d9364f su #fdecef → 4.01
+     Stesso tono, luminosità abbassata quanto basta. Come --color-gold-text,
+     esistono SOLO per il testo: i fondi istituzionali restano quelli sopra. */
+  --color-success-text: #00734a; /* 5.28 su success-bg · 5.91 su bianco */
+  --color-warning-text: #945800; /* 5.26 su warning-bg · 5.75 su bianco */
+  --color-danger-text: #c02039; /* 5.25 su danger-bg · 5.99 su bianco */
+  /* info non ha una variante: --color-ink-muted su info-bg è già 4.57. */
+
   /* --- Accento istituzionale -------------------------------------------- */
   --color-gold: #b68a35; /* 3.15 — decorativo o testo grande, mai testo normale */
   --color-gold-text: #8a6825; /* 5.14 — la variante da usare per il testo */

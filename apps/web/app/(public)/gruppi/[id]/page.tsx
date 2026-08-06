@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import {
   BarraProgresso,
   Breadcrumb,
@@ -38,6 +40,8 @@ export default async function GruppoPage({ params }: PageProps<'/gruppi/[id]'>) 
   const formattaData = (valore: string | null) =>
     valore ? new Date(valore).toLocaleDateString('it-IT', { day: 'numeric', month: 'long' }) : ''
 
+  const cronologia = gruppo.timeline_markdown?.trim()
+
   return (
     <>
       <Breadcrumb
@@ -62,6 +66,42 @@ export default async function GruppoPage({ params }: PageProps<'/gruppi/[id]'>) 
 
           <h1 className="mt-3 text-h1">{gruppo.title}</h1>
           <p className="mt-4 text-h4 font-normal text-ink-muted">{gruppo.summary}</p>
+
+          {cronologia && (
+            <section className="mt-10" aria-labelledby="cronologia">
+              <h2 id="cronologia" className="text-h3">
+                Come è andata finora
+              </h2>
+              {gruppo.timeline_updated_at && (
+                <p className="mt-1 text-caption text-ink-muted">
+                  Aggiornato il {formattaData(gruppo.timeline_updated_at)}
+                </p>
+              )}
+
+              {/* I titoli prodotti dal modello diventano `h3`: la pagina ha già
+                  il suo unico `<h1>` e la sua gerarchia, e un titolo di livello
+                  sbagliato disorienta chi naviga con uno screen reader.
+                  Il testo salvato è già ripulito, questa è la seconda rete. */}
+              <div className="prose-voce mt-4">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{ h1: 'h3', h2: 'h3' }}
+                >
+                  {cronologia}
+                </ReactMarkdown>
+              </div>
+
+              <CalloutAvviso
+                tono="info"
+                titolo="Riassunto scritto da un programma"
+                className="mt-4"
+              >
+                Questo testo è generato automaticamente dalle segnalazioni
+                pubbliche del gruppo. Può contenere imprecisioni. I racconti
+                originali sono qui sotto.
+              </CalloutAvviso>
+            </section>
+          )}
 
           <section className="mt-10" aria-labelledby="racconti">
             <h2 id="racconti" className="text-h3">

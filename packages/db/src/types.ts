@@ -34,12 +34,105 @@ export type Database = {
   }
   public: {
     Tables: {
+      action_responses: {
+        Row: {
+          action_id: string
+          anonymized_at: string | null
+          cites_art_5bis: boolean
+          classification:
+            | Database["public"]["Enums"]["pa_response_class"]
+            | null
+          classified_at: string | null
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          document_url: string | null
+          id: string
+          proposed_remedy: string | null
+          proposed_remedy_anon: string | null
+          raw_text: string
+          reason: string | null
+          reason_anon: string | null
+          received_at: string
+          source: string
+        }
+        Insert: {
+          action_id: string
+          anonymized_at?: string | null
+          cites_art_5bis?: boolean
+          classification?:
+            | Database["public"]["Enums"]["pa_response_class"]
+            | null
+          classified_at?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          document_url?: string | null
+          id?: string
+          proposed_remedy?: string | null
+          proposed_remedy_anon?: string | null
+          raw_text: string
+          reason?: string | null
+          reason_anon?: string | null
+          received_at?: string
+          source?: string
+        }
+        Update: {
+          action_id?: string
+          anonymized_at?: string | null
+          cites_art_5bis?: boolean
+          classification?:
+            | Database["public"]["Enums"]["pa_response_class"]
+            | null
+          classified_at?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          document_url?: string | null
+          id?: string
+          proposed_remedy?: string | null
+          proposed_remedy_anon?: string | null
+          raw_text?: string
+          reason?: string | null
+          reason_anon?: string | null
+          received_at?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "action_responses_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "action_responses_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "admin_actions_queue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "action_responses_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "public_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       actions: {
         Row: {
           body_markdown: string
           cluster_id: string
           created_at: string
+          deadline_at: string | null
+          deadline_basis: string | null
+          deadline_days: number | null
           docx_url: string | null
+          follow_up_generated_at: string | null
+          follow_up_of_action_id: string | null
           id: string
           is_synthetic: boolean
           kind: Database["public"]["Enums"]["action_kind"]
@@ -60,7 +153,12 @@ export type Database = {
           body_markdown: string
           cluster_id: string
           created_at?: string
+          deadline_at?: string | null
+          deadline_basis?: string | null
+          deadline_days?: number | null
           docx_url?: string | null
+          follow_up_generated_at?: string | null
+          follow_up_of_action_id?: string | null
           id?: string
           is_synthetic?: boolean
           kind: Database["public"]["Enums"]["action_kind"]
@@ -81,7 +179,12 @@ export type Database = {
           body_markdown?: string
           cluster_id?: string
           created_at?: string
+          deadline_at?: string | null
+          deadline_basis?: string | null
+          deadline_days?: number | null
           docx_url?: string | null
+          follow_up_generated_at?: string | null
+          follow_up_of_action_id?: string | null
           id?: string
           is_synthetic?: boolean
           kind?: Database["public"]["Enums"]["action_kind"]
@@ -103,6 +206,13 @@ export type Database = {
             foreignKeyName: "actions_cluster_id_fkey"
             columns: ["cluster_id"]
             isOneToOne: false
+            referencedRelation: "admin_clusters_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "actions_cluster_id_fkey"
+            columns: ["cluster_id"]
+            isOneToOne: false
             referencedRelation: "clusters"
             referencedColumns: ["id"]
           },
@@ -114,6 +224,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "actions_follow_up_of_action_id_fkey"
+            columns: ["follow_up_of_action_id"]
+            isOneToOne: false
+            referencedRelation: "actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "actions_follow_up_of_action_id_fkey"
+            columns: ["follow_up_of_action_id"]
+            isOneToOne: false
+            referencedRelation: "admin_actions_queue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "actions_follow_up_of_action_id_fkey"
+            columns: ["follow_up_of_action_id"]
+            isOneToOne: false
+            referencedRelation: "public_actions"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "actions_recipient_endpoint_fkey"
             columns: ["recipient_endpoint_id"]
             isOneToOne: false
@@ -121,6 +252,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      admins: {
+        Row: {
+          auth_user_id: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          last_seen_at: string | null
+          link_allowed_until: string | null
+        }
+        Insert: {
+          auth_user_id?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          last_seen_at?: string | null
+          link_allowed_until?: string | null
+        }
+        Update: {
+          auth_user_id?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          last_seen_at?: string | null
+          link_allowed_until?: string | null
+        }
+        Relationships: []
       }
       app_config: {
         Row: {
@@ -157,6 +318,7 @@ export type Database = {
           pending_city_report_id: string | null
           phone_e164: string | null
           postal_code: string | null
+          preferred_language: string | null
           telegram_id: number | null
         }
         Insert: {
@@ -172,6 +334,7 @@ export type Database = {
           pending_city_report_id?: string | null
           phone_e164?: string | null
           postal_code?: string | null
+          preferred_language?: string | null
           telegram_id?: number | null
         }
         Update: {
@@ -187,6 +350,7 @@ export type Database = {
           pending_city_report_id?: string | null
           phone_e164?: string | null
           postal_code?: string | null
+          preferred_language?: string | null
           telegram_id?: number | null
         }
         Relationships: [
@@ -218,9 +382,15 @@ export type Database = {
           neighborhood: string | null
           radius_meters: number | null
           reports_count: number
+          review_flag: boolean
+          review_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           status: Database["public"]["Enums"]["cluster_status"]
           summary: string
           threshold_reached_at: string | null
+          timeline_markdown: string | null
+          timeline_updated_at: string | null
           title: string
           updated_at: string
         }
@@ -235,9 +405,15 @@ export type Database = {
           neighborhood?: string | null
           radius_meters?: number | null
           reports_count?: number
+          review_flag?: boolean
+          review_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: Database["public"]["Enums"]["cluster_status"]
           summary: string
           threshold_reached_at?: string | null
+          timeline_markdown?: string | null
+          timeline_updated_at?: string | null
           title: string
           updated_at?: string
         }
@@ -252,13 +428,134 @@ export type Database = {
           neighborhood?: string | null
           radius_meters?: number | null
           reports_count?: number
+          review_flag?: boolean
+          review_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: Database["public"]["Enums"]["cluster_status"]
           summary?: string
           threshold_reached_at?: string | null
+          timeline_markdown?: string | null
+          timeline_updated_at?: string | null
           title?: string
           updated_at?: string
         }
         Relationships: []
+      }
+      notifications: {
+        Row: {
+          action_id: string | null
+          attempts: number
+          channel: Database["public"]["Enums"]["notification_channel"]
+          citizen_id: string
+          cluster_id: string | null
+          created_at: string
+          dedupe_key: string
+          failed_at: string | null
+          id: string
+          kind: Database["public"]["Enums"]["notification_kind"]
+          last_error: string | null
+          payload: Json
+          report_id: string | null
+          sent_at: string | null
+        }
+        Insert: {
+          action_id?: string | null
+          attempts?: number
+          channel: Database["public"]["Enums"]["notification_channel"]
+          citizen_id: string
+          cluster_id?: string | null
+          created_at?: string
+          dedupe_key: string
+          failed_at?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["notification_kind"]
+          last_error?: string | null
+          payload?: Json
+          report_id?: string | null
+          sent_at?: string | null
+        }
+        Update: {
+          action_id?: string | null
+          attempts?: number
+          channel?: Database["public"]["Enums"]["notification_channel"]
+          citizen_id?: string
+          cluster_id?: string | null
+          created_at?: string
+          dedupe_key?: string
+          failed_at?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["notification_kind"]
+          last_error?: string | null
+          payload?: Json
+          report_id?: string | null
+          sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "admin_actions_queue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "public_actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_citizen_id_fkey"
+            columns: ["citizen_id"]
+            isOneToOne: false
+            referencedRelation: "citizens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_cluster_id_fkey"
+            columns: ["cluster_id"]
+            isOneToOne: false
+            referencedRelation: "admin_clusters_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_cluster_id_fkey"
+            columns: ["cluster_id"]
+            isOneToOne: false
+            referencedRelation: "clusters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_cluster_id_fkey"
+            columns: ["cluster_id"]
+            isOneToOne: false
+            referencedRelation: "public_clusters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "public_cluster_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pa_endpoints: {
         Row: {
@@ -335,8 +632,67 @@ export type Database = {
           },
         ]
       }
+      report_media: {
+        Row: {
+          bytes: number | null
+          created_at: string
+          description: string | null
+          duration_seconds: number | null
+          id: string
+          is_synthetic: boolean
+          kind: Database["public"]["Enums"]["media_kind"]
+          mime_type: string | null
+          report_id: string
+          storage_path: string
+          transcript: string | null
+        }
+        Insert: {
+          bytes?: number | null
+          created_at?: string
+          description?: string | null
+          duration_seconds?: number | null
+          id?: string
+          is_synthetic?: boolean
+          kind: Database["public"]["Enums"]["media_kind"]
+          mime_type?: string | null
+          report_id: string
+          storage_path: string
+          transcript?: string | null
+        }
+        Update: {
+          bytes?: number | null
+          created_at?: string
+          description?: string | null
+          duration_seconds?: number | null
+          id?: string
+          is_synthetic?: boolean
+          kind?: Database["public"]["Enums"]["media_kind"]
+          mime_type?: string | null
+          report_id?: string
+          storage_path?: string
+          transcript?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_media_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "public_cluster_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_media_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reports: {
         Row: {
+          anon_redactions: Json | null
+          anon_reviewed_at: string | null
           anon_text: string | null
           category: string | null
           channel: Database["public"]["Enums"]["report_channel"]
@@ -346,12 +702,20 @@ export type Database = {
           cluster_id: string | null
           created_at: string
           external_id: string | null
+          follow_up_question: string | null
           id: string
           is_synthetic: boolean
           location: unknown
           location_hint: string | null
+          moderated_at: string | null
+          moderation_categories: Json | null
           moderation_flagged: boolean
+          moderation_reviewed_at: string | null
+          moderation_reviewed_by: string | null
+          moderation_score: number | null
           neighborhood: string | null
+          original_language: string | null
+          previous_cluster_id: string | null
           public_token: string
           raw_media_urls: string[]
           raw_text: string
@@ -360,6 +724,8 @@ export type Database = {
           urgency: number | null
         }
         Insert: {
+          anon_redactions?: Json | null
+          anon_reviewed_at?: string | null
           anon_text?: string | null
           category?: string | null
           channel: Database["public"]["Enums"]["report_channel"]
@@ -369,12 +735,20 @@ export type Database = {
           cluster_id?: string | null
           created_at?: string
           external_id?: string | null
+          follow_up_question?: string | null
           id?: string
           is_synthetic?: boolean
           location?: unknown
           location_hint?: string | null
+          moderated_at?: string | null
+          moderation_categories?: Json | null
           moderation_flagged?: boolean
+          moderation_reviewed_at?: string | null
+          moderation_reviewed_by?: string | null
+          moderation_score?: number | null
           neighborhood?: string | null
+          original_language?: string | null
+          previous_cluster_id?: string | null
           public_token?: string
           raw_media_urls?: string[]
           raw_text: string
@@ -383,6 +757,8 @@ export type Database = {
           urgency?: number | null
         }
         Update: {
+          anon_redactions?: Json | null
+          anon_reviewed_at?: string | null
           anon_text?: string | null
           category?: string | null
           channel?: Database["public"]["Enums"]["report_channel"]
@@ -392,12 +768,20 @@ export type Database = {
           cluster_id?: string | null
           created_at?: string
           external_id?: string | null
+          follow_up_question?: string | null
           id?: string
           is_synthetic?: boolean
           location?: unknown
           location_hint?: string | null
+          moderated_at?: string | null
+          moderation_categories?: Json | null
           moderation_flagged?: boolean
+          moderation_reviewed_at?: string | null
+          moderation_reviewed_by?: string | null
+          moderation_score?: number | null
           neighborhood?: string | null
+          original_language?: string | null
+          previous_cluster_id?: string | null
           public_token?: string
           raw_media_urls?: string[]
           raw_text?: string
@@ -417,12 +801,40 @@ export type Database = {
             foreignKeyName: "reports_cluster_id_fkey"
             columns: ["cluster_id"]
             isOneToOne: false
+            referencedRelation: "admin_clusters_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_cluster_id_fkey"
+            columns: ["cluster_id"]
+            isOneToOne: false
             referencedRelation: "clusters"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "reports_cluster_id_fkey"
             columns: ["cluster_id"]
+            isOneToOne: false
+            referencedRelation: "public_clusters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_previous_cluster_id_fkey"
+            columns: ["previous_cluster_id"]
+            isOneToOne: false
+            referencedRelation: "admin_clusters_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_previous_cluster_id_fkey"
+            columns: ["previous_cluster_id"]
+            isOneToOne: false
+            referencedRelation: "clusters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_previous_cluster_id_fkey"
+            columns: ["previous_cluster_id"]
             isOneToOne: false
             referencedRelation: "public_clusters"
             referencedColumns: ["id"]
@@ -457,6 +869,13 @@ export type Database = {
             columns: ["action_id"]
             isOneToOne: false
             referencedRelation: "actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signatures_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "admin_actions_queue"
             referencedColumns: ["id"]
           },
           {
@@ -499,8 +918,150 @@ export type Database = {
         }
         Relationships: []
       }
+      storage_deletions: {
+        Row: {
+          attempts: number
+          bucket: string
+          deleted_at: string | null
+          id: string
+          last_error: string | null
+          path: string
+          reason: string
+          requested_at: string
+        }
+        Insert: {
+          attempts?: number
+          bucket: string
+          deleted_at?: string | null
+          id?: string
+          last_error?: string | null
+          path: string
+          reason?: string
+          requested_at?: string
+        }
+        Update: {
+          attempts?: number
+          bucket?: string
+          deleted_at?: string | null
+          id?: string
+          last_error?: string | null
+          path?: string
+          reason?: string
+          requested_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
+      admin_actions_queue: {
+        Row: {
+          city: string | null
+          cluster_id: string | null
+          cluster_review_flag: boolean | null
+          cluster_title: string | null
+          created_at: string | null
+          deadline_at: string | null
+          deadline_basis: string | null
+          deadline_days: number | null
+          follow_up_generated_at: string | null
+          follow_up_of_action_id: string | null
+          id: string | null
+          is_synthetic: boolean | null
+          kind: Database["public"]["Enums"]["action_kind"] | null
+          recipient: string | null
+          response_received_at: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          risposte_da_confermare: number | null
+          risposte_totali: number | null
+          signatures_count: number | null
+          signatures_target: number | null
+          status: Database["public"]["Enums"]["action_status"] | null
+          submitted_at: string | null
+          title: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "actions_cluster_id_fkey"
+            columns: ["cluster_id"]
+            isOneToOne: false
+            referencedRelation: "admin_clusters_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "actions_cluster_id_fkey"
+            columns: ["cluster_id"]
+            isOneToOne: false
+            referencedRelation: "clusters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "actions_cluster_id_fkey"
+            columns: ["cluster_id"]
+            isOneToOne: false
+            referencedRelation: "public_clusters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "actions_follow_up_of_action_id_fkey"
+            columns: ["follow_up_of_action_id"]
+            isOneToOne: false
+            referencedRelation: "actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "actions_follow_up_of_action_id_fkey"
+            columns: ["follow_up_of_action_id"]
+            isOneToOne: false
+            referencedRelation: "admin_actions_queue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "actions_follow_up_of_action_id_fkey"
+            columns: ["follow_up_of_action_id"]
+            isOneToOne: false
+            referencedRelation: "public_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_clusters_overview: {
+        Row: {
+          atti_bozza: number | null
+          atti_revisionati: number | null
+          atti_totali: number | null
+          category: string | null
+          citizens_count: number | null
+          city: string | null
+          created_at: string | null
+          e_pubblico: boolean | null
+          id: string | null
+          is_synthetic: boolean | null
+          neighborhood: string | null
+          reports_count: number | null
+          review_flag: boolean | null
+          review_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["cluster_status"] | null
+          timeline_updated_at: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Relationships: []
+      }
+      admin_notifications_health: {
+        Row: {
+          channel: Database["public"]["Enums"]["notification_channel"] | null
+          fallite: number | null
+          inviate: number | null
+          kind: Database["public"]["Enums"]["notification_kind"] | null
+          ora: string | null
+          tentativi_max: number | null
+          totali: number | null
+        }
+        Relationships: []
+      }
       geography_columns: {
         Row: {
           coord_dimension: number | null
@@ -543,12 +1104,53 @@ export type Database = {
         }
         Relationships: []
       }
+      public_action_responses: {
+        Row: {
+          action_id: string | null
+          cites_art_5bis: boolean | null
+          classification:
+            | Database["public"]["Enums"]["pa_response_class"]
+            | null
+          confirmed_at: string | null
+          id: string | null
+          proposed_remedy: string | null
+          reason: string | null
+          received_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "action_responses_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "action_responses_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "admin_actions_queue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "action_responses_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "public_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       public_actions: {
         Row: {
           body_markdown: string | null
           cluster_id: string | null
           created_at: string | null
+          deadline_at: string | null
+          deadline_basis: string | null
+          deadline_days: number | null
           docx_url: string | null
+          follow_up_of_action_id: string | null
           id: string | null
           kind: Database["public"]["Enums"]["action_kind"] | null
           pdf_url: string | null
@@ -556,6 +1158,7 @@ export type Database = {
           response_received_at: string | null
           response_text: string | null
           reviewed_by: string | null
+          revisionato: boolean | null
           signatures_count: number | null
           signatures_target: number | null
           status: Database["public"]["Enums"]["action_status"] | null
@@ -563,6 +1166,13 @@ export type Database = {
           title: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "actions_cluster_id_fkey"
+            columns: ["cluster_id"]
+            isOneToOne: false
+            referencedRelation: "admin_clusters_overview"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "actions_cluster_id_fkey"
             columns: ["cluster_id"]
@@ -577,7 +1187,41 @@ export type Database = {
             referencedRelation: "public_clusters"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "actions_follow_up_of_action_id_fkey"
+            columns: ["follow_up_of_action_id"]
+            isOneToOne: false
+            referencedRelation: "actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "actions_follow_up_of_action_id_fkey"
+            columns: ["follow_up_of_action_id"]
+            isOneToOne: false
+            referencedRelation: "admin_actions_queue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "actions_follow_up_of_action_id_fkey"
+            columns: ["follow_up_of_action_id"]
+            isOneToOne: false
+            referencedRelation: "public_actions"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      public_city_responsiveness: {
+        Row: {
+          accolte: number | null
+          actions_sent: number | null
+          avg_response_days: number | null
+          city: string | null
+          interlocutorie: number | null
+          irricevibili: number | null
+          respinte: number | null
+          responses_confirmed: number | null
+        }
+        Relationships: []
       }
       public_city_stats: {
         Row: {
@@ -601,6 +1245,13 @@ export type Database = {
           urgency: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "reports_cluster_id_fkey"
+            columns: ["cluster_id"]
+            isOneToOne: false
+            referencedRelation: "admin_clusters_overview"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "reports_cluster_id_fkey"
             columns: ["cluster_id"]
@@ -631,6 +1282,8 @@ export type Database = {
           status: Database["public"]["Enums"]["cluster_status"] | null
           summary: string | null
           threshold_reached_at: string | null
+          timeline_markdown: string | null
+          timeline_updated_at: string | null
           title: string | null
           updated_at: string | null
         }
@@ -647,6 +1300,8 @@ export type Database = {
           status?: Database["public"]["Enums"]["cluster_status"] | null
           summary?: string | null
           threshold_reached_at?: string | null
+          timeline_markdown?: string | null
+          timeline_updated_at?: never
           title?: string | null
           updated_at?: never
         }
@@ -663,6 +1318,8 @@ export type Database = {
           status?: Database["public"]["Enums"]["cluster_status"] | null
           summary?: string | null
           threshold_reached_at?: string | null
+          timeline_markdown?: string | null
+          timeline_updated_at?: never
           title?: string | null
           updated_at?: never
         }
@@ -769,6 +1426,10 @@ export type Database = {
         Returns: unknown
       }
       _st_within: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      action_follow_up_kind: {
+        Args: { kind: Database["public"]["Enums"]["action_kind"] }
+        Returns: Database["public"]["Enums"]["action_kind"]
+      }
       addauth: { Args: { "": string }; Returns: boolean }
       addgeometrycolumn:
         | {
@@ -808,6 +1469,16 @@ export type Database = {
             Returns: string
           }
       blur_point: { Args: { meters?: number; p: unknown }; Returns: unknown }
+      cluster_brigading_signals: {
+        Args: { target: string }
+        Returns: {
+          n_citizens: number
+          n_citizens_nuovi: number
+          n_reports: number
+          quota_stessa_ora: number
+          similarita_media_interna: number
+        }[]
+      }
       config_int: { Args: { config_key: string }; Returns: number }
       count_recent_reports: {
         Args: { target_citizen: string; window_minutes?: number }
@@ -973,6 +1644,8 @@ export type Database = {
         }[]
       }
       gettransactionid: { Args: never; Returns: unknown }
+      is_admin: { Args: never; Returns: boolean }
+      link_current_admin: { Args: never; Returns: boolean }
       longtransactionsenabled: { Args: never; Returns: boolean }
       match_similar_reports: {
         Args: {
@@ -1031,6 +1704,26 @@ export type Database = {
       postgis_version: { Args: never; Returns: string }
       postgis_wagyu_version: { Args: never; Returns: string }
       refresh_cluster_counters: { Args: { target: string }; Returns: undefined }
+      report_is_under_moderation: { Args: { target: string }; Returns: boolean }
+      search_public_clusters: {
+        Args: {
+          filter_city?: string
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+        }
+        Returns: {
+          category: string
+          citizens_count: number
+          city: string
+          cluster_id: string
+          neighborhood: string
+          reports_count: number
+          status: Database["public"]["Enums"]["cluster_status"]
+          summary: string
+          title: string
+        }[]
+      }
       st_3dclosestpoint: {
         Args: { geom1: unknown; geom2: unknown }
         Returns: unknown
@@ -1632,6 +2325,8 @@ export type Database = {
         | "mozione_consigliere"
         | "dossier_giornalistico"
         | "diffida_pa"
+        | "sollecito"
+        | "riesame_accesso_civico"
       action_status:
         | "bozza"
         | "in_firma"
@@ -1644,6 +2339,23 @@ export type Database = {
         | "in_azione"
         | "risolto"
         | "ignorato"
+      media_kind: "audio" | "foto"
+      notification_channel: "telegram" | "email" | "whatsapp"
+      notification_kind:
+        | "gruppo_formato"
+        | "gruppo_pubblico"
+        | "atto_preparato"
+        | "pa_ha_risposto"
+        | "scadenza_meta"
+        | "scadenza_raggiunta"
+        | "scadenza_superata"
+        | "moderazione_riammessa"
+        | "moderazione_confermata"
+      pa_response_class:
+        | "accolta"
+        | "respinta"
+        | "interlocutoria"
+        | "irricevibile"
       report_channel: "whatsapp" | "telegram" | "web" | "voice"
       report_status:
         | "nuovo"
@@ -1796,6 +2508,8 @@ export const Constants = {
         "mozione_consigliere",
         "dossier_giornalistico",
         "diffida_pa",
+        "sollecito",
+        "riesame_accesso_civico",
       ],
       action_status: [
         "bozza",
@@ -1810,6 +2524,25 @@ export const Constants = {
         "in_azione",
         "risolto",
         "ignorato",
+      ],
+      media_kind: ["audio", "foto"],
+      notification_channel: ["telegram", "email", "whatsapp"],
+      notification_kind: [
+        "gruppo_formato",
+        "gruppo_pubblico",
+        "atto_preparato",
+        "pa_ha_risposto",
+        "scadenza_meta",
+        "scadenza_raggiunta",
+        "scadenza_superata",
+        "moderazione_riammessa",
+        "moderazione_confermata",
+      ],
+      pa_response_class: [
+        "accolta",
+        "respinta",
+        "interlocutoria",
+        "irricevibile",
       ],
       report_channel: ["whatsapp", "telegram", "web", "voice"],
       report_status: [

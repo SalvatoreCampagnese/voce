@@ -1,0 +1,39 @@
+<!--
+  Codice di accesso al pannello di amministrazione di VOCE.
+
+  PERCHÉ QUESTO FILE ESISTE.
+  Il modello predefinito di Supabase per il magic link contiene SOLO
+  {{ .ConfirmationURL }}, cioè un collegamento da cliccare. Il pannello di VOCE
+  chiede invece un codice a sei cifre, perché una Server Action che funziona
+  senza JavaScript non può ricevere il frammento di URL su cui si appoggia il
+  collegamento. Senza questo modello l'email arriva senza cifre, il modulo
+  rifiuta qualunque valore e NESSUNO riesce a entrare nel pannello — e senza
+  pannello nessun atto viene revisionato, quindi nessun atto parte.
+
+  {{ .Token }} è il codice a sei cifre. Il collegamento resta come alternativa
+  per chi preferisce cliccare.
+
+  ATTENZIONE: questo file vale solo per l'istanza LOCALE. Sul progetto cloud lo
+  stesso contenuto va incollato in Authentication → Emails → Magic Link.
+  In locale le email non partono davvero: si leggono su http://127.0.0.1:54324
+-->
+<h2>Il tuo codice di accesso</h2>
+
+<p>Ciao, hai chiesto di entrare nel pannello di VOCE.</p>
+
+<p>Il codice è:</p>
+
+<p style="font-size: 28px; font-weight: 700; letter-spacing: 4px; font-family: monospace;">
+  {{ .Token }}
+</p>
+
+<p>Scadenza: un'ora. Vale una volta sola.</p>
+
+<p>In alternativa puoi entrare da qui: <a href="{{ .ConfirmationURL }}">apri il pannello</a></p>
+
+<hr />
+
+<p style="color: #5c6f82; font-size: 14px;">
+  Se non hai chiesto tu questo codice, ignora il messaggio: senza il codice non
+  entra nessuno. Nessuno di VOCE ti chiederà mai di inoltrarlo.
+</p>

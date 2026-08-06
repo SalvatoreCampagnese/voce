@@ -6,6 +6,9 @@
     { "path": "/api/cron/recluster", "schedule": "5 3 * * *" },
     { "path": "/api/cron/rescue-reports", "schedule": "20 3 * * *" },
     { "path": "/api/cron/dossier-refresh", "schedule": "35 3 * * *" },
-    { "path": "/api/cron/notify-signatures", "schedule": "0 9 * * *" }
+    { "path": "/api/cron/cronologia", "schedule": "45 3 * * *" },
+    { "path": "/api/cron/scadenze", "schedule": "15 8 * * *" },
+    { "path": "/api/cron/notifiche", "schedule": "0 9 * * *" },
+    { "path": "/api/cron/pulizia-media", "schedule": "30 4 * * *" }
   ]
 }

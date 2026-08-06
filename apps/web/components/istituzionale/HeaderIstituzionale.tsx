@@ -2,6 +2,9 @@ import Link from 'next/link'
 import { Tricolore } from '@voce/ui'
 
 const VOCI = [
+  // Prima voce, prima di «Segnala»: chi arriva da un link condiviso spesso non
+  // sa ancora cos'è questo sito, e la risposta non deve stare in fondo al menu.
+  { href: '/cosa-e', etichetta: 'Cosa è' },
   { href: '/segnala', etichetta: 'Segnala' },
   { href: '/gruppi', etichetta: 'Gruppi attivi' },
   { href: '/dossier', etichetta: 'Atti' },
@@ -28,7 +31,12 @@ export function HeaderIstituzionale() {
     <>
       <Tricolore />
       <header className="border-b border-surface-strong bg-white">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-4">
+        {/* Su telefono logo e menu stanno incolonnati: da cinque voci in su, con
+            `justify-between`, il menu andava a capo allineandosi a destra e le
+            voci finivano in colonne diverse a ogni riga. Da `sm` in su torna la
+            barra orizzontale di prima. Nessun JavaScript: un menu a tendina
+            costerebbe uno stato client su ogni pagina del sito. */}
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-6 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4">
           <Link href="/" className="flex items-center gap-3 rounded">
             <VoceLogo className="h-10 w-10 text-primary-700" />
             <span className="flex flex-col">
@@ -39,8 +47,12 @@ export function HeaderIstituzionale() {
             </span>
           </Link>
 
-          <nav aria-label="Navigazione principale">
-            <ul className="flex flex-wrap items-center gap-1">
+          <nav aria-label="Navigazione principale" className="w-full sm:w-auto">
+            {/* -mx-3 compensa il px-3 dei link: il testo della prima voce resta
+                allineato al logo, l'ultima al bordo destro del contenitore.
+                gap-y-1 tiene le righe leggibili quando il menu va a capo, cosa
+                che succede su telefono e con il testo ingrandito al 200%. */}
+            <ul className="-mx-3 flex flex-wrap items-center gap-x-1 gap-y-1">
               {VOCI.map((voce) => (
                 <li key={voce.href}>
                   <Link

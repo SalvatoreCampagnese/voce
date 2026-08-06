@@ -9,6 +9,7 @@ import {
   ClusterSummarySchema,
 } from '@/lib/ai/prompts'
 import { getSoglie } from '@/lib/config/thresholds'
+import { valutaBrigading } from '@/lib/security/brigading'
 
 export interface ReclusterResult {
   esaminati: number
@@ -174,6 +175,21 @@ export async function ricostruisciGruppi(): Promise<ReclusterResult> {
     ids.forEach((id) => assorbite.add(id))
     risultato.gruppiCreati += 1
     risultato.segnalazioniRaggruppate += ids.length
+
+    // I segnali di coordinamento si valutano PRIMA della soglia d'azione, e
+    // l'ordine non è estetico: valutaSogliaAzione() può far partire subito la
+    // generazione degli atti, e il trigger che blocca gli atti sui gruppi in
+    // revisione può bloccarli solo se il flag esiste già. Invertendo le due
+    // righe, una campagna coordinata otterrebbe il suo esposto nel minuto in cui
+    // il gruppo nasce, e la revisione arriverebbe a cose fatte.
+    //
+    // Un fallimento qui non ferma il clustering: far incontrare le persone che
+    // hanno lo stesso problema è il lavoro principale, il sospetto è un di più.
+    try {
+      await valutaBrigading(gruppo.id)
+    } catch (errore) {
+      logger.error('recluster.brigading_fallito', { cluster_id: gruppo.id, error: errore })
+    }
 
     // Un gruppo può nascere già sopra la soglia d'azione: senza questa
     // valutazione resterebbe 'emergente' per sempre, perché il controllo del

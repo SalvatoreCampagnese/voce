@@ -27,14 +27,21 @@ const SchemaSegnalazione = z.object({
   contatto: z
     .string()
     .trim()
-    .min(1, 'Serve un contatto per avvisarti quando la segnalazione diventa un’azione.')
+    .min(1, 'Scrivi la tua email. Senza un recapito non possiamo tornare da te.')
     .max(200),
   citta: z.string().trim().max(100).optional().or(z.literal('')),
   quartiere: z.string().trim().max(100).optional().or(z.literal('')),
 })
 
 export interface StatoModulo {
+  /** Errori legati a un campo: compaiono accanto a quel campo. */
   errori?: Record<string, string>
+  /**
+   * Problema che non appartiene a nessun campo (salvataggio fallito, troppe
+   * segnalazioni in poco tempo). Sta in cima al modulo, non sotto una casella
+   * che la persona ha compilato bene.
+   */
+  messaggio?: string
   valoriPrecedenti?: Record<string, string>
 }
 
@@ -72,7 +79,10 @@ export async function inviaSegnalazione(
 
   if (!isEmail && !isTelefono) {
     return {
-      errori: { contatto: 'Scrivi un indirizzo email oppure un numero di telefono.' },
+      errori: {
+        contatto:
+          'Non riconosciamo questo recapito. Scrivi la tua email, oppure un numero di telefono.',
+      },
       valoriPrecedenti: grezzi,
     }
   }
@@ -105,11 +115,9 @@ export async function inviaSegnalazione(
     const limite = await checkReportRateLimit(cittadino.id, 'web')
     if (!limite.allowed) {
       return {
-        errori: {
-          testo: `Hai inviato diverse segnalazioni in poco tempo. Riprova fra circa ${Math.ceil(
-            limite.retryAfterSeconds / 60,
-          )} minuti.`,
-        },
+        messaggio: `Hai inviato diverse segnalazioni in poco tempo. Riprova fra circa ${Math.ceil(
+          limite.retryAfterSeconds / 60,
+        )} minuti.`,
         valoriPrecedenti: grezzi,
       }
     }
@@ -134,6 +142,17 @@ export async function inviaSegnalazione(
 
     logger.info('web.segnalazione_ricevuta', { report_id: report.id })
 
+    if (!isEmail) {
+      // Con il solo numero di telefono non riusciamo ad avvisare nessuno: il
+      // canale WhatsApp non è collegato, e `accodaNotifica()` scrive una riga
+      // già fallita (lib/notifications/index.ts). Il modulo lo dice a chi
+      // scrive; qui lo contiamo, perché un buco va misurato, non nascosto.
+      logger.warn('web.contatto_senza_canale', {
+        report_id: report.id,
+        canale: 'whatsapp',
+      })
+    }
+
     after(async () => {
       try {
         await triageReport(report.id)
@@ -149,10 +168,8 @@ export async function inviaSegnalazione(
       messaggio: errore instanceof Error ? errore.message : String(errore),
     })
     return {
-      errori: {
-        testo:
-          'Non siamo riusciti a salvare la segnalazione. Riprova fra qualche minuto: il testo che hai scritto è ancora qui.',
-      },
+      messaggio:
+        'Non siamo riusciti a salvare la segnalazione. Riprova fra qualche minuto: il testo che hai scritto è ancora qui.',
       valoriPrecedenti: grezzi,
     }
   }

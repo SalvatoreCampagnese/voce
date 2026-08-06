@@ -9,8 +9,14 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "isolatedModules": true,
-    "resolveJsonModule": true,
-    "types": ["node"]
+    "resolveJsonModule": true
+    // Niente "types": ["node"]. Il pacchetto dichiara solo tipi generati dal
+    // database e alias di dominio: non tocca una sola API di Node. La riga
+    // c'era ma @types/node non è fra le sue dipendenze, quindi `pnpm typecheck`
+    // sull'intero workspace falliva sempre — e un controllo che fallisce
+    // sempre è un controllo che tutti imparano a ignorare.
+    // Se un giorno arriva uno script di seed sotto scripts/, va aggiunta
+    // insieme alla dipendenza, non da sola.
   },
   "include": ["src/**/*.ts", "scripts/**/*.ts"],
   "exclude": ["node_modules"]

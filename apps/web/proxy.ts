@@ -82,6 +82,15 @@ export const config = {
      * Restano coperte le pagine, le Server Action (che sono POST sulla rotta
      * della pagina) e `/api/actions/[id]/sign`, che invece la sessione ce
      * l'ha e serve.
+     *
+     * `/admin` rientra fra le pagine coperte: il pattern esclude solo le rotte
+     * elencate qui sopra, quindi il pannello passa di qui senza aggiungere
+     * niente. Questo serve al pannello — l'accesso con codice via email crea la
+     * sessione dentro una Server Action, e senza il rinfresco dei token
+     * l'amministratore risulterebbe sloggato a caso — ma NON è ciò che protegge
+     * il pannello: un matcher può smettere di coprire una rotta senza che
+     * nessuno se ne accorga. A dire di no sono `richiediAdmin()` in ogni pagina
+     * e, sotto, le policy RLS.
      */
     '/((?!api/ingest|api/cron|api/internal|api/public|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|fonts/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|woff|woff2|ttf|otf)$).*)',
   ],

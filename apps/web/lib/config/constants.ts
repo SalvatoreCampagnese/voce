@@ -163,3 +163,85 @@ export const CRON_FAILURE_ALERT_THRESHOLD = 3
 export const REPORT_CHANNELS = ['whatsapp', 'telegram', 'web', 'voice'] as const
 
 export type ReportChannel = (typeof REPORT_CHANNELS)[number]
+
+// ---------------------------------------------------------------------------
+// Media: vocali e foto (PLAN2 §2.1, §2.3)
+// ---------------------------------------------------------------------------
+
+/**
+ * Bucket di Supabase Storage dove finiscono audio e foto dei cittadini.
+ *
+ * È **privato**, e non è un dettaglio di configurazione: la voce è un dato
+ * biometrico e una foto può contenere volti e targhe di persone che non hanno
+ * scritto a VOCE e non potevano acconsentire. Nulla di ciò che sta qui dentro
+ * compare in una pagina pubblica: in pagina va la trascrizione anonimizzata o
+ * la descrizione, mai il file.
+ */
+export const STORAGE_BUCKET_MEDIA = 'segnalazioni-media'
+
+/**
+ * Durata massima di un vocale accettato, in secondi.
+ * Oltre, il costo della trascrizione cresce senza che il racconto migliori: si
+ * chiede al cittadino di dividerlo in due, senza rifiutare quello che ha già detto.
+ */
+export const MAX_AUDIO_SECONDS = 300
+
+/** Dimensione massima di un file scaricato da un canale, in byte. */
+export const MAX_MEDIA_BYTES = 20 * 1024 * 1024
+
+// ---------------------------------------------------------------------------
+// Lingua (PLAN2 §2.2)
+// ---------------------------------------------------------------------------
+
+/**
+ * Lingue in cui il bot sa rispondere.
+ *
+ * Corvetto, Sanità e Ballarò sono i posti d'Italia dove si parlano più lingue:
+ * accettare solo l'italiano esclude sistematicamente chi ha meno strumenti per
+ * farsi sentire per altre vie. `clean_text` e `anon_text` restano però sempre in
+ * italiano — il raggruppamento lavora su una lingua sola e gli atti si scrivono
+ * a una Procura.
+ */
+export const LINGUA_PREDEFINITA = 'it'
+
+export const LINGUE_RISPOSTA = [
+  'it', 'en', 'fr', 'es', 'ar', 'ro', 'zh', 'bn', 'ur', 'sq', 'uk', 'ru', 'tl',
+] as const
+
+export type LinguaRisposta = (typeof LINGUE_RISPOSTA)[number]
+
+// ---------------------------------------------------------------------------
+// Notifiche (PLAN2 §1.1)
+// ---------------------------------------------------------------------------
+
+/**
+ * Quante notifiche prova a spedire un giro del job.
+ * Basso di proposito: Telegram limita a circa 30 messaggi al secondo e un job
+ * che si fa bloccare a metà lascia metà cittadini senza risposta.
+ */
+export const NOTIFICHE_BATCH_SIZE = 50
+
+/**
+ * Tentativi di invio prima di considerare una notifica persa.
+ * Dopo l'ultimo tentativo la riga resta con `failed_at` valorizzato e compare
+ * nel pannello di amministrazione: una promessa non mantenuta va vista da una
+ * persona, non sepolta in un log.
+ */
+export const NOTIFICHE_MAX_TENTATIVI = 3
+
+// ---------------------------------------------------------------------------
+// Scadenzario normativo (PLAN2 §3.1)
+// ---------------------------------------------------------------------------
+
+/**
+ * Frazione del termine di legge a cui si manda il primo avviso.
+ * A metà termine c'è ancora tempo per sollecitare; alla scadenza non più.
+ */
+export const SCADENZA_AVVISO_META = 0.5
+
+/**
+ * Giorni dopo la scadenza entro cui si prepara automaticamente l'atto
+ * successivo (sollecito, riesame, difensore civico). La macchina prepara, la
+ * persona firma: nessun atto parte da solo.
+ */
+export const SCADENZA_GIORNI_SEGUITO = 1

@@ -223,7 +223,19 @@ enable_signup = true
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
-enable_confirmations = false
+#
+# VOCE: deve restare `true`. Il collegamento di un amministratore avviene per
+# EMAIL (public.link_current_admin() confronta auth.users.email con la riga in
+# public.admins). Con le conferme disattivate, chiunque puo' registrarsi
+# dichiarando l'indirizzo di un amministratore senza possederlo, e al primo
+# accesso si ritroverebbe i privilegi di quella persona.
+# Nel database esistono gia' due controlli compensativi — la finestra d'invito
+# `admins.link_allowed_until`, che va aperta con service role e si consuma al
+# primo uso, e la lettura dell'email da auth.users invece che dal claim JWT —
+# ma sono reti, non sostituti di questa riga.
+# ATTENZIONE: questo file configura solo l'istanza LOCALE. Sul progetto cloud
+# la stessa impostazione va messa in Authentication -> Providers -> Email.
+enable_confirmations = true
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
 secure_password_change = false
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
@@ -247,6 +259,15 @@ otp_expiry = 3600
 # [auth.email.template.invite]
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"
+
+# VOCE — codice di accesso al pannello di amministrazione.
+# Il modello predefinito manda solo un collegamento, mentre il pannello chiede
+# sei cifre: senza questo blocco l'email arriva senza codice e nel pannello non
+# entra nessuno. Il file contiene {{ .Token }}.
+# Sul progetto cloud va replicato in Authentication -> Emails -> Magic Link.
+[auth.email.template.magic_link]
+subject = "Il tuo codice di accesso a VOCE"
+content_path = "./supabase/templates/magic_link.html"
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
