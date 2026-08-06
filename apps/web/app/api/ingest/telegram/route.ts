@@ -7,7 +7,8 @@ import { serverEnv } from '@/lib/config/env'
 import { MAX_AUDIO_SECONDS } from '@/lib/config/constants'
 import { logger } from '@/lib/utils/logger'
 import { checkReportRateLimit } from '@/lib/security/rate-limit'
-import { triageReport } from '@/lib/ai/triage'
+import { triageReport, type TriageResult } from '@/lib/ai/triage'
+import { classificaRisposta, integraSegnalazione } from '@/lib/ai/integrazione'
 import { aggiornaLuogoSegnalazione, estraiLuogo } from '@/lib/ai/luogo'
 import { trascriviAudio } from '@/lib/ai/trascrizione'
 import { descriviFoto } from '@/lib/ai/visione'
@@ -34,6 +35,17 @@ const LIMITE_ASSOLUTO_AUDIO_SECONDI = MAX_AUDIO_SECONDS * 2
 
 /** Quanto della trascrizione si rimanda indietro al cittadino per conferma. */
 const ANTEPRIMA_CARATTERI = 220
+
+/**
+ * La domanda da mostrare al classificatore quando il triage non ne ha salvata
+ * una precisa.
+ *
+ * Succede nel caso `servonoDettagli`: la segnalazione è troppo vaga ma il
+ * modello non ha saputo dire quale sia LA cosa che manca. Il messaggio che
+ * mandiamo in quel caso promette comunque «riscrivimela pure qui, la
+ * sostituisco a quella di prima», e quella promessa va mantenuta come le altre.
+ */
+const DOMANDA_GENERICA = 'Che cosa succede, dove, e da quanto tempo va avanti?'
 
 /**
  * Testo salvato quando un modello si guasta e il racconto non è leggibile.
@@ -139,7 +151,7 @@ export async function POST(req: NextRequest) {
     // campi che qualcuno ha già riempito.
     const { data: giaNoto } = await sb
       .from('citizens')
-      .select('id, pending_city_report_id, preferred_language')
+      .select('id, pending_city_report_id, pending_detail_report_id, preferred_language')
       .eq('telegram_id', mittente.id)
       .maybeSingle()
 
@@ -158,7 +170,7 @@ export async function POST(req: NextRequest) {
     const { data: cittadino, error: erroreCittadino } = await sb
       .from('citizens')
       .upsert(patch, { onConflict: 'telegram_id' })
-      .select('id, pending_city_report_id, preferred_language')
+      .select('id, pending_city_report_id, pending_detail_report_id, preferred_language')
       .single()
 
     if (erroreCittadino || !cittadino) {
@@ -402,6 +414,132 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // --- Risposta alla domanda di dettaglio --------------------------------
+    // «Di che tipo di guasto si tratta?» — «elettrico, tutta la palazzina».
+    //
+    // Senza questo blocco quella risposta diventava una segnalazione NUOVA:
+    // il cittadino si ritrovava due righe dimezzate al posto di una completa,
+    // nessuna delle due abbastanza forte da entrare in un gruppo, e la
+    // promessa che gli avevamo appena fatto («la sostituisco a quella di
+    // prima») restava disattesa. È il caso in cui aver risposto a una nostra
+    // domanda peggiorava la sua segnalazione invece di migliorarla.
+    //
+    // Si chiede a un modello, non alla lunghezza del messaggio: «due mesi» e
+    // «è un guasto elettrico e tutta la palazzina è al buio» sono entrambe
+    // risposte, e nessuna soglia di caratteri le distingue da una segnalazione
+    // nuova. Il classificatore riceve la domanda che abbiamo fatto, e con
+    // quella davanti la distinzione diventa ovvia.
+    //
+    // Su guasto si salta, per la stessa ragione del blocco sul comune: `testo`
+    // è un segnaposto scritto da noi, non parole di nessuno.
+    if (!guasto && cittadino.pending_detail_report_id) {
+      const idInSospeso = cittadino.pending_detail_report_id
+
+      const { data: inSospeso } = await sb
+        .from('reports')
+        .select('id, raw_text, follow_up_question, public_token')
+        .eq('id', idInSospeso)
+        .maybeSingle()
+
+      // La segnalazione non c'è più (cancellata, diritto all'oblio): si
+      // dimentica la domanda e il messaggio prosegue come segnalazione nuova.
+      if (!inSospeso) {
+        await sb
+          .from('citizens')
+          .update({ pending_detail_report_id: null })
+          .eq('id', cittadino.id)
+      } else {
+        const domanda = inSospeso.follow_up_question?.trim() || DOMANDA_GENERICA
+
+        const esito = await classificaRisposta({
+          domanda,
+          segnalazione: inSospeso.raw_text,
+          messaggio: testo,
+        })
+
+        // In un caso o nell'altro la domanda è consumata: o abbiamo la
+        // risposta, o abbiamo capito che il cittadino sta parlando d'altro.
+        // Lasciarla in piedi farebbe leggere come risposta anche il messaggio
+        // dopo, e quello dopo ancora.
+        await sb
+          .from('citizens')
+          .update({ pending_detail_report_id: null })
+          .eq('id', cittadino.id)
+
+        if (esito.integra) {
+          const integrata = await integraSegnalazione({
+            reportId: inSospeso.id,
+            domanda: inSospeso.follow_up_question?.trim() || null,
+            aggiunta: testo,
+            sostituisce: esito.sostituisce,
+          })
+
+          // Se la scrittura non è riuscita non si finge: il messaggio prosegue
+          // come segnalazione nuova, che è un esito peggiore ma non è una
+          // perdita. Dire «l'ho aggiunto» e non averlo aggiunto, invece, lo
+          // sarebbe.
+          if (integrata) {
+            logger.info('telegram.risposta_integrata', {
+              report_id: inSospeso.id,
+              citizen_id: cittadino.id,
+              tipo: media?.kind ?? 'testo',
+              sostituzione: esito.sostituisce,
+            })
+
+            await inviaMessaggioTelegram(
+              chatId,
+              messaggio(
+                'integrazioneAggiunta',
+                lingua,
+                media?.kind === 'audio' && media.trascrizione
+                  ? anteprimaDi(media.trascrizione)
+                  : null,
+                `${serverEnv.APP_URL}/segnalazione/${inSospeso.public_token}`,
+              ),
+            )
+
+            const mediaDaAllegare = media
+            after(async () => {
+              // Il vocale con cui ha risposto va allegato alla segnalazione che
+              // ha appena completato, non a una riga che non esiste.
+              if (mediaDaAllegare) {
+                try {
+                  await archiviaMedia({ ...mediaDaAllegare, reportId: inSospeso.id })
+                } catch (errore) {
+                  logger.error('telegram.archiviazione_media_fallita', {
+                    report_id: inSospeso.id,
+                    kind: mediaDaAllegare.kind,
+                    error: errore,
+                  })
+                }
+              }
+
+              try {
+                // Si ri-smista sul testo completo: categoria, embedding e
+                // gruppo cambiano proprio grazie al pezzo appena aggiunto —
+                // è il motivo per cui la domanda era stata fatta.
+                const risultato = await triageReport(inSospeso.id)
+                await rispondiDopoTriage({
+                  chatId,
+                  citizenId: cittadino.id,
+                  reportId: inSospeso.id,
+                  esito: risultato,
+                  linguaRipiego: lingua,
+                })
+              } catch (errore) {
+                logger.error('telegram.ri_triage_fallito', {
+                  report_id: inSospeso.id,
+                  error: errore,
+                })
+              }
+            })
+
+            return NextResponse.json({ ok: true })
+          }
+        }
+      }
+    }
+
     // Il controllo di lunghezza sta QUI e non prima: una risposta come
     // «Milano» è di sei caratteri, e messo più in alto rifiutava proprio le
     // risposte alla domanda che avevamo appena fatto noi.
@@ -532,62 +670,13 @@ export async function POST(req: NextRequest) {
 
       try {
         const esito = await triageReport(report.id)
-
-        // Da qui in poi si risponde nella lingua in cui il cittadino ha
-        // davvero scritto, non in quella della sua applicazione.
-        // La memoria di questa scelta (`citizens.preferred_language`) la scrive
-        // il triage: qui si usa e basta, per non avere due padroni sulla stessa
-        // colonna.
-        const linguaEsito = normalizzaLingua(esito.language || lingua)
-
-        // Quarantena (PLAN2 §1.3): onestà senza accusa. La segnalazione non è
-        // stata cancellata e non prosegue: lo si dice, senza fare la lezione e
-        // senza nominare il motivo. Un falso positivo su una parolaccia non
-        // deve trasformarsi in un richiamo.
-        if (esito.quarantined) {
-          await inviaMessaggioTelegram(chatId, messaggio('inQuarantena', linguaEsito))
-          return
-        }
-
-        // Il modello ha giudicato il messaggio troppo vago per farci qualcosa,
-        // e la segnalazione è stata archiviata. Il cittadino però ha appena
-        // letto «la sto confrontando con quelle di altri»: se non gli diciamo
-        // niente, resta convinto che stiamo lavorando su una cosa che invece è
-        // ferma. Glielo diciamo, e gli mostriamo come riscriverla — se il triage
-        // sa quale sia la cosa che manca, gliela chiediamo per nome.
-        if (!esito.actionable) {
-          await inviaMessaggioTelegram(
-            chatId,
-            esito.missingDetail
-              ? messaggio('domandaSpecifica', linguaEsito, esito.missingDetail)
-              : messaggio('servonoDettagli', linguaEsito),
-          )
-          return
-        }
-
-        // Il comune non è né nel testo né fra ciò che sappiamo del cittadino:
-        // senza, questa segnalazione non potrà mai unirsi a quelle dei vicini.
-        // Si chiede adesso, una volta sola, e la risposta arriverà al prossimo
-        // messaggio (vedi pending_city_report_id). Ha la precedenza su ogni
-        // altra domanda: due domande insieme non ricevono risposta.
-        if (esito.needsCity) {
-          await sb
-            .from('citizens')
-            .update({ pending_city_report_id: report.id })
-            .eq('id', cittadino.id)
-
-          await inviaMessaggioTelegram(chatId, messaggio('chiediComune', linguaEsito))
-          return
-        }
-
-        // La segnalazione va bene così, ma una cosa la renderebbe più forte
-        // (PLAN2 §2.4). Si chiede quella, non «più dettagli».
-        if (esito.missingDetail) {
-          await inviaMessaggioTelegram(
-            chatId,
-            messaggio('dettaglioInPiu', linguaEsito, esito.missingDetail),
-          )
-        }
+        await rispondiDopoTriage({
+          chatId,
+          citizenId: cittadino.id,
+          reportId: report.id,
+          esito,
+          linguaRipiego: lingua,
+        })
       } catch (errore) {
         // Non si rilancia: la segnalazione è salva e il cron la riprenderà.
         logger.error('telegram.triage_fallito', {
@@ -629,6 +718,99 @@ export async function POST(req: NextRequest) {
     // il guasto capita prima ancora dell'insert, la segnalazione è persa
     // comunque — e il rinvio non l'avrebbe salvata, perché avrebbe rifallito.
     return NextResponse.json({ ok: true })
+  }
+}
+
+/**
+ * Che cosa si dice al cittadino quando lo smistamento ha finito, e che cosa ci
+ * ricordiamo di avergli chiesto.
+ *
+ * Sta in una funzione sola perché i due percorsi che ci arrivano — segnalazione
+ * nuova e segnalazione appena integrata — devono comportarsi allo stesso modo.
+ * Duplicare questo blocco significherebbe, prima o poi, una domanda ricordata
+ * su un percorso e dimenticata sull'altro: cioè un cittadino che risponde e
+ * non viene ascoltato, che è il guasto che questa funzione esiste per chiudere.
+ *
+ * OGNI DOMANDA CHE FACCIAMO VIENE ANNOTATA. `pending_city_report_id` e
+ * `pending_detail_report_id` sono la memoria di ciò che stiamo aspettando, e si
+ * escludono a vicenda: due domande insieme non ricevono risposta, quindi
+ * scriverne una azzera l'altra.
+ */
+async function rispondiDopoTriage(input: {
+  chatId: number
+  citizenId: string
+  reportId: string
+  esito: TriageResult
+  /** La lingua da usare se il triage non ne ha riconosciuta una. */
+  linguaRipiego: string
+}): Promise<void> {
+  const sb = createServiceClient()
+
+  // Da qui in poi si risponde nella lingua in cui il cittadino ha davvero
+  // scritto, non in quella della sua applicazione. La memoria di questa scelta
+  // (`citizens.preferred_language`) la scrive il triage: qui si usa e basta,
+  // per non avere due padroni sulla stessa colonna.
+  const lingua = normalizzaLingua(input.esito.language || input.linguaRipiego)
+
+  /** Annota che cosa stiamo aspettando, azzerando l'altra attesa. */
+  const ricorda = async (attesa: 'comune' | 'dettaglio') =>
+    sb
+      .from('citizens')
+      .update({
+        pending_city_report_id: attesa === 'comune' ? input.reportId : null,
+        pending_detail_report_id: attesa === 'dettaglio' ? input.reportId : null,
+      })
+      .eq('id', input.citizenId)
+
+  // Quarantena (PLAN2 §1.3): onestà senza accusa. La segnalazione non è stata
+  // cancellata e non prosegue: lo si dice, senza fare la lezione e senza
+  // nominare il motivo. Un falso positivo su una parolaccia non deve
+  // trasformarsi in un richiamo.
+  if (input.esito.quarantined) {
+    await inviaMessaggioTelegram(input.chatId, messaggio('inQuarantena', lingua))
+    return
+  }
+
+  // Il modello ha giudicato il messaggio troppo vago per farci qualcosa, e la
+  // segnalazione è stata archiviata. Il cittadino però ha appena letto «la sto
+  // confrontando con quelle di altri»: se non gli diciamo niente, resta
+  // convinto che stiamo lavorando su una cosa che invece è ferma. Glielo
+  // diciamo, e gli mostriamo come riscriverla — se il triage sa quale sia la
+  // cosa che manca, gliela chiediamo per nome.
+  //
+  // In entrambi i casi la domanda si annota: tutti e due i messaggi promettono
+  // che la riscrittura sostituirà quella di prima, e senza l'annotazione la
+  // riscrittura diventerebbe una seconda segnalazione monca.
+  if (!input.esito.actionable) {
+    await ricorda('dettaglio')
+    await inviaMessaggioTelegram(
+      input.chatId,
+      input.esito.missingDetail
+        ? messaggio('domandaSpecifica', lingua, input.esito.missingDetail)
+        : messaggio('servonoDettagli', lingua),
+    )
+    return
+  }
+
+  // Il comune non è né nel testo né fra ciò che sappiamo del cittadino: senza,
+  // questa segnalazione non potrà mai unirsi a quelle dei vicini. Si chiede
+  // adesso, una volta sola, e la risposta arriverà al prossimo messaggio (vedi
+  // pending_city_report_id). Ha la precedenza su ogni altra domanda.
+  if (input.esito.needsCity) {
+    await ricorda('comune')
+    await inviaMessaggioTelegram(input.chatId, messaggio('chiediComune', lingua))
+    return
+  }
+
+  // La segnalazione va bene così, ma una cosa la renderebbe più forte
+  // (PLAN2 §2.4). Si chiede quella, non «più dettagli» — e si annota, perché la
+  // risposta va a finire in QUESTA segnalazione.
+  if (input.esito.missingDetail) {
+    await ricorda('dettaglio')
+    await inviaMessaggioTelegram(
+      input.chatId,
+      messaggio('dettaglioInPiu', lingua, input.esito.missingDetail),
+    )
   }
 }
 

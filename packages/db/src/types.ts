@@ -316,6 +316,7 @@ export type Database = {
           last_seen_at: string | null
           neighborhood: string | null
           pending_city_report_id: string | null
+          pending_detail_report_id: string | null
           phone_e164: string | null
           postal_code: string | null
           preferred_language: string | null
@@ -332,6 +333,7 @@ export type Database = {
           last_seen_at?: string | null
           neighborhood?: string | null
           pending_city_report_id?: string | null
+          pending_detail_report_id?: string | null
           phone_e164?: string | null
           postal_code?: string | null
           preferred_language?: string | null
@@ -348,6 +350,7 @@ export type Database = {
           last_seen_at?: string | null
           neighborhood?: string | null
           pending_city_report_id?: string | null
+          pending_detail_report_id?: string | null
           phone_e164?: string | null
           postal_code?: string | null
           preferred_language?: string | null
@@ -364,6 +367,20 @@ export type Database = {
           {
             foreignKeyName: "citizens_pending_city_report_id_fkey"
             columns: ["pending_city_report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "citizens_pending_detail_report_id_fkey"
+            columns: ["pending_detail_report_id"]
+            isOneToOne: false
+            referencedRelation: "public_cluster_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "citizens_pending_detail_report_id_fkey"
+            columns: ["pending_detail_report_id"]
             isOneToOne: false
             referencedRelation: "reports"
             referencedColumns: ["id"]

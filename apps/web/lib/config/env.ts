@@ -172,6 +172,25 @@ const serverEnvSchema = z.object({
     ]),
   ),
 
+  // --- Accesso dimostrativo al pannello ------------------------------------
+  // VOCE è oggi una dimostrazione da hackathon, e chi la guarda deve poter
+  // aprire il pannello senza che qualcuno gli inoltri un codice via email.
+  // Questa variabile è l'INTERRUTTORE di quell'ingresso: se è vuota, il
+  // bottone non compare e la Server Action rifiuta di fare qualunque cosa.
+  //
+  // È l'unica forma accettabile per una porta del genere. Un accesso
+  // dimostrativo che vive in una costante del codice entra in produzione
+  // insieme al codice e nessuno se ne accorge; uno che dipende da una
+  // variabile d'ambiente si spegne cancellando una riga, e la sua assenza è
+  // verificabile guardando la configurazione di Vercel.
+  //
+  // DA SPEGNERE PRIMA DEL PILOT SU CITTADINI VERI: da questa porta si leggono
+  // i racconti grezzi delle persone, non solo le pagine pubbliche.
+  DEMO_ADMIN_EMAIL: z.preprocess(
+    (value) => (value === undefined || value === '' ? '' : value),
+    z.union([z.literal(''), z.email('DEMO_ADMIN_EMAIL deve essere un indirizzo valido')]),
+  ),
+
   // --- Soglie operative ----------------------------------------------------
   // Tutte opzionali: senza variabile valgono i valori tarati in constants.ts.
   // Si cambiano senza ricompilare, per ritarare il pilot da Vercel.
@@ -301,6 +320,7 @@ function skippedServerEnv(): ServerEnv {
     EMAIL_API_URL: process.env.EMAIL_API_URL ?? '',
     EMAIL_API_KEY: process.env.EMAIL_API_KEY ?? '',
     EMAIL_FROM: process.env.EMAIL_FROM ?? '',
+    DEMO_ADMIN_EMAIL: process.env.DEMO_ADMIN_EMAIL ?? '',
 
     // Le soglie non sono segreti: anche con la validazione saltata restano i
     // valori tarati, così una build di CI si comporta come la produzione.

@@ -3,7 +3,8 @@ import { redirect } from 'next/navigation'
 import { Bottone, CalloutAvviso, CampoModulo, CardIstituzionale } from '@voce/ui'
 
 import { getAdminCorrente } from '@/lib/auth/admin'
-import { chiediCodice, verificaCodice } from './azioni'
+import { serverEnv } from '@/lib/config/env'
+import { chiediCodice, entraComeDemo, verificaCodice } from './azioni'
 
 /**
  * Accesso al pannello, in due passi su una sola pagina.
@@ -35,6 +36,9 @@ const MESSAGGI: Record<string, string> = {
   'codice-non-valido': 'Il codice non è corretto oppure è scaduto. Chiedine un altro.',
   'accesso-non-abilitato':
     'Questo indirizzo non ha accesso al pannello. Se dovresti averlo, chiedi che il tuo invito venga riaperto.',
+  'demo-non-attiva': 'L’accesso di prova non è attivo su questa installazione.',
+  'demo-non-riuscita':
+    'Non siamo riusciti ad aprire il pannello di prova. Riprova fra qualche minuto.',
 }
 
 export default async function AccessoPage({ searchParams }: PageProps<'/admin/accesso'>) {
@@ -48,6 +52,11 @@ export default async function AccessoPage({ searchParams }: PageProps<'/admin/ac
   const codiceErrore = typeof parametri.errore === 'string' ? parametri.errore : null
   const errore = codiceErrore ? (MESSAGGI[codiceErrore] ?? MESSAGGI['invio-non-riuscito']) : null
   const uscita = parametri.uscita === 'fatta'
+
+  // La porta di prova esiste solo se qualcuno l'ha aperta nella configurazione.
+  // Senza `DEMO_ADMIN_EMAIL` questo blocco non compare, e la Server Action che
+  // ci sta dietro rifiuta comunque: vedi la nota in azioni.ts.
+  const emailDemo = serverEnv.DEMO_ADMIN_EMAIL
 
   return (
     <div className="mx-auto max-w-xl">
@@ -71,6 +80,27 @@ export default async function AccessoPage({ searchParams }: PageProps<'/admin/ac
         </CalloutAvviso>
       )}
 
+      {/* Chi sta guardando la dimostrazione non ha una casella su cui ricevere
+          il codice. Il bottone entra da solo; l'indirizzo è scritto sopra
+          perché si veda con quale identità si sta entrando, e resta
+          precompilato nel modulo qui sotto per chi preferisce il giro
+          normale. */}
+      {emailDemo && passo === 'email' && (
+        <CalloutAvviso tono="info" titolo="Stai guardando una dimostrazione" className="mt-6">
+          <p>
+            VOCE non è ancora in servizio: le segnalazioni che vedi nel pannello
+            sono di prova. Puoi entrare senza codice con l’account già
+            predisposto.
+          </p>
+          <p className="mt-2">
+            Account di prova: <strong>{emailDemo}</strong> — nessuna password.
+          </p>
+          <form action={entraComeDemo} className="mt-4">
+            <Bottone type="submit">Entra con l’account di prova</Bottone>
+          </form>
+        </CalloutAvviso>
+      )}
+
       <CardIstituzionale className="mt-6">
         {passo === 'email' ? (
           <form action={chiediCodice} className="flex flex-col gap-5">
@@ -89,6 +119,7 @@ export default async function AccessoPage({ searchParams }: PageProps<'/admin/ac
                   autoComplete="email"
                   inputMode="email"
                   placeholder="nome.cognome@comune.it"
+                  defaultValue={emailDemo || undefined}
                   required
                 />
               )}

@@ -140,6 +140,46 @@ Estrai:
 Non inventare: se il messaggio nomina una via ma nessun comune, city resta null.
 Se il testo non è italiano o non è comprensibile, is_place = false.`
 
+/**
+ * Risposta alla domanda di dettaglio: integra la segnalazione di prima, oppure
+ * è tutt'altro?
+ *
+ * Serve perché una risposta come «due mesi» o «è un guasto elettrico» non si
+ * distingue da sola: presa per quello che sembra, diventa una segnalazione
+ * nuova e monca, e quella di prima resta incompleta per sempre. Con la domanda
+ * che le abbiamo fatto davanti, invece, la distinzione è ovvia.
+ *
+ * `sostituisce` esiste per il caso opposto e altrettanto comune: alla domanda
+ * «mi manca una cosa, riscrivimela» il cittadino riscrive tutta la
+ * segnalazione, non solo il pezzo mancante. Attaccarla in fondo produrrebbe un
+ * racconto doppio.
+ */
+export const RispostaDettaglioSchema = z.object({
+  integra: z
+    .boolean()
+    .describe(
+      'true se il messaggio risponde alla domanda o aggiunge dettagli alla stessa segnalazione',
+    ),
+  sostituisce: z
+    .boolean()
+    .describe(
+      'true se il messaggio riscrive per intero la stessa segnalazione invece di aggiungere un pezzo',
+    ),
+})
+
+export type RispostaDettaglioOutput = z.infer<typeof RispostaDettaglioSchema>
+
+export const RISPOSTA_DETTAGLIO_SYSTEM_PROMPT = `Un cittadino italiano ha inviato una segnalazione civica. Le abbiamo fatto UNA domanda per completarla. Ora è arrivato un nuovo messaggio.
+
+Devi decidere se il nuovo messaggio riguarda ANCORA quella segnalazione o se parla di un problema diverso.
+
+- integra: true se il messaggio risponde alla domanda, la risponde male, la risponde in parte, oppure aggiunge un qualunque dettaglio allo STESSO problema. Vale anche se è brevissimo ("due mesi", "in via Verdi", "elettrico", "non lo so"), anche se non nomina il problema, anche se è un vocale trascritto in modo approssimativo.
+  false solo se il messaggio racconta un problema DIVERSO (altro luogo, altro disservizio, altro argomento), o se è un saluto, un ringraziamento, una domanda a noi, una prova.
+- sostituisce: true se il messaggio riscrive la stessa segnalazione per intero, cioè ripete cosa succede e dove, non solo il pezzo che mancava. false se aggiunge soltanto.
+  Quando integra è false, sostituisce è false.
+
+Nel dubbio fra "risponde alla domanda" e "problema diverso", scegli integra = true: unire due messaggi che parlano della stessa cosa si corregge, spezzare in due il racconto di una persona no.`
+
 /** Prompt per il titolo e il riassunto di un gruppo di segnalazioni. */
 export const ClusterSummarySchema = z.object({
   title: z.string().describe('Titolo breve e concreto, massimo 70 caratteri'),

@@ -61,6 +61,22 @@ export function FooterIstituzionale() {
             ripubblicare le proprie modifiche: un’infrastruttura civica non può
             diventare il prodotto chiuso di qualcuno.
           </p>
+
+          {/* La porta di servizio sta nel piede, dove i siti pubblici la
+              mettono da sempre. Non è un segreto — /admin/accesso non dice mai
+              se un indirizzo è di un amministratore, quindi nasconderlo non
+              proteggerebbe niente e costringerebbe chi ci lavora a ricordare
+              l'indirizzo a memoria. `rel="nofollow"` più il `noindex` della
+              pagina la tengono fuori dai motori di ricerca. */}
+          <p className="mt-6">
+            <Link
+              href="/admin/accesso"
+              rel="nofollow"
+              className="inline-flex min-h-11 items-center underline underline-offset-2 text-small text-white/80 hover:text-primary-200"
+            >
+              Accedi all’amministrazione
+            </Link>
+          </p>
         </div>
       </div>
 

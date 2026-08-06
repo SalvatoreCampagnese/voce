@@ -103,6 +103,11 @@ interface Frasario {
   domandaSpecifica: (domanda: string) => string
   /** La domanda specifica, quando la segnalazione è già utile così com'è. */
   dettaglioInPiu: (domanda: string) => string
+  /**
+   * La risposta alla domanda è finita nella segnalazione di prima, non in una
+   * nuova. `anteprima` è la trascrizione, quando la risposta è arrivata a voce.
+   */
+  integrazioneAggiunta: (anteprima: string | null, url: string) => string
   inQuarantena: () => string
   chiediComune: () => string
   comuneRegistrato: (citta: string, quartiere: string | null) => string
@@ -258,6 +263,21 @@ const IT: Frasario = {
       domanda,
       '',
       'Se lo sai, scrivimelo pure qui.',
+    ].join('\n'),
+
+  // Si dice esplicitamente che NON è nata una segnalazione nuova. È la cosa che
+  // il cittadino teme dopo aver risposto a una domanda, ed è esattamente ciò
+  // che succedeva prima: due segnalazioni dimezzate al posto di una completa.
+  integrazioneAggiunta: (anteprima, url) =>
+    [
+      ...(anteprima
+        ? ['Ho ascoltato il tuo vocale. Ho capito questo:', '', `«${anteprima}»`, '']
+        : []),
+      'L\'ho aggiunto alla segnalazione di prima: non ne ho aperta una nuova.',
+      '',
+      'La sto confrontando con quelle di altri cittadini della tua zona.',
+      '',
+      `Segui la tua segnalazione qui: ${url}`,
     ].join('\n'),
 
   // Quarantena (PLAN2 §1.3): onestà senza accusa. Non si nomina il motivo, non
@@ -497,6 +517,17 @@ const EN: Partial<Frasario> = {
       '',
       'If you know it, write it here.',
     ].join('\n'),
+  integrazioneAggiunta: (anteprima, url) =>
+    [
+      ...(anteprima
+        ? ['I listened to your voice message. This is what I understood:', '', `"${anteprima}"`, '']
+        : []),
+      'I added it to your previous report: I did not open a new one.',
+      '',
+      'I am comparing it with reports from other people in your area.',
+      '',
+      `Follow your report here: ${url}`,
+    ].join('\n'),
   inQuarantena: () =>
     [
       'I received your report, but for now it is on hold.',
@@ -697,6 +728,17 @@ const FR: Partial<Frasario> = {
       domanda,
       '',
       'Si tu le sais, écris-le ici.',
+    ].join('\n'),
+  integrazioneAggiunta: (anteprima, url) =>
+    [
+      ...(anteprima
+        ? ['J\'ai écouté ton message vocal. Voici ce que j\'ai compris :', '', `« ${anteprima} »`, '']
+        : []),
+      'Je l\'ai ajouté à ton signalement précédent : je n\'en ai pas ouvert un nouveau.',
+      '',
+      'Je le compare avec ceux d\'autres habitants de ta zone.',
+      '',
+      `Suis ton signalement ici : ${url}`,
     ].join('\n'),
   inQuarantena: () =>
     [
@@ -899,6 +941,17 @@ const ES: Partial<Frasario> = {
       '',
       'Si lo sabes, escríbemelo aquí.',
     ].join('\n'),
+  integrazioneAggiunta: (anteprima, url) =>
+    [
+      ...(anteprima
+        ? ['He escuchado tu mensaje de voz. Esto es lo que he entendido:', '', `«${anteprima}»`, '']
+        : []),
+      'Lo he añadido a tu aviso anterior: no he abierto uno nuevo.',
+      '',
+      'Lo estoy comparando con los de otros vecinos de tu zona.',
+      '',
+      `Sigue tu aviso aquí: ${url}`,
+    ].join('\n'),
   inQuarantena: () =>
     [
       'He recibido tu aviso, pero por ahora está parado.',
@@ -1099,6 +1152,17 @@ const RO: Partial<Frasario> = {
       domanda,
       '',
       'Dacă știi, scrie-mi aici.',
+    ].join('\n'),
+  integrazioneAggiunta: (anteprima, url) =>
+    [
+      ...(anteprima
+        ? ['Ți-am ascultat mesajul vocal. Am înțeles asta:', '', `«${anteprima}»`, '']
+        : []),
+      'L-am adăugat la sesizarea de dinainte: nu am deschis una nouă.',
+      '',
+      'O compar cu sesizările altor locuitori din zona ta.',
+      '',
+      `Urmărește sesizarea aici: ${url}`,
     ].join('\n'),
   inQuarantena: () =>
     [

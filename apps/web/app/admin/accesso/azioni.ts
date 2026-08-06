@@ -34,6 +34,7 @@ import { z } from 'zod'
 import { collegaAdminCorrente } from '@/lib/auth/admin'
 import { serverEnv } from '@/lib/config/env'
 import { createServerSupabase } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { logger } from '@/lib/utils/logger'
 
 /** Cookie di servizio che tiene l'email fra il passo 1 e il passo 2. */
@@ -173,6 +174,128 @@ export async function verificaCodice(formData: FormData): Promise<void> {
 
   biscotti.delete({ name: COOKIE_EMAIL, path: '/admin' })
   logger.info('admin.accesso_riuscito')
+
+  redirect('/admin')
+}
+
+/**
+ * Nome mostrato accanto all'amministratore di prova, nel pannello.
+ * Dice a chiare lettere che cosa è, a chiunque lo legga in una schermata.
+ */
+const NOME_DEMO = 'Amministratore di prova (dimostrazione)'
+
+/** Quanto resta aperto l'invito appena creato per l'account di prova. */
+const INVITO_DEMO_ORE = 24
+
+/**
+ * Ingresso dimostrativo nel pannello, senza codice via email.
+ *
+ * PERCHÉ ESISTE. VOCE oggi è una dimostrazione da hackathon: chi la guarda deve
+ * poter aprire il pannello di moderazione in un clic. Il percorso normale gli
+ * chiederebbe un codice a sei cifre inviato a una casella che non è la sua.
+ *
+ * PERCHÉ NON È UNA FALLA. Tre condizioni, tutte necessarie:
+ *
+ *   1. `DEMO_ADMIN_EMAIL` vuota disattiva tutto. Nessuna costante nel codice,
+ *      nessun indirizzo predefinito: senza la variabile questa funzione esce
+ *      subito e il bottone non compare nemmeno. Si spegne cancellando una riga
+ *      dalla configurazione, e l'assenza si verifica guardandola.
+ *   2. entra SOLO in quell'indirizzo. Non accetta parametri, non legge il
+ *      modulo, non c'è niente da manomettere: chi la invoca diventa
+ *      l'amministratore di prova o niente.
+ *   3. l'account nasce con la stessa procedura degli altri — riga in `admins`
+ *      più finestra d'invito consumata da `link_current_admin()` — quindi la
+ *      RLS lo tratta come un amministratore qualunque, senza scorciatoie.
+ *
+ * COME CREA LA SESSIONE. `generateLink` con service role produce il codice OTP
+ * **senza inviare nessuna email** (è la differenza con `signInWithOtp`), e quel
+ * codice viene verificato subito qui sul server. Il risultato è una sessione
+ * identica a quella di un accesso normale: stessi cookie, stessa scadenza,
+ * stessa RLS. Non si scavalca l'autenticazione, si salta solo la casella di
+ * posta.
+ *
+ * DA SPEGNERE PRIMA DEL PILOT SU CITTADINI VERI: da questo pannello si leggono
+ * i racconti in chiaro delle persone.
+ */
+export async function entraComeDemo(): Promise<void> {
+  const email = serverEnv.DEMO_ADMIN_EMAIL
+
+  if (!email) {
+    logger.warn('admin.demo_disattivata')
+    redirect('/admin/accesso?errore=demo-non-attiva')
+  }
+
+  const servizio = createServiceClient()
+
+  // --- 1. L'account di autenticazione --------------------------------------
+  // Già confermato: `link_current_admin()` scarta chi ha l'email non
+  // confermata, e per una casella che non esiste nessuno confermerà mai niente.
+  // `createUser` fallisce se l'utente c'è già, ed è l'esito normale dal secondo
+  // ingresso in poi: si prosegue.
+  const { error: erroreUtente } = await servizio.auth.admin.createUser({
+    email,
+    email_confirm: true,
+    user_metadata: { demo: true },
+  })
+
+  if (erroreUtente && !/already|registered|exists/i.test(erroreUtente.message)) {
+    logger.warn('admin.demo_utente_non_creato', { error: erroreUtente.message })
+  }
+
+  // --- 2. La riga in `admins` e la finestra d'invito ------------------------
+  // Stessa istruzione documentata in lib/auth/admin.ts, eseguita qui invece che
+  // a mano. `on conflict do update` riapre l'invito a ogni uso: una
+  // dimostrazione mostrata fra una settimana non deve trovarlo scaduto.
+  const { error: erroreAdmin } = await servizio.from('admins').upsert(
+    {
+      email,
+      full_name: NOME_DEMO,
+      link_allowed_until: new Date(Date.now() + INVITO_DEMO_ORE * 3600_000).toISOString(),
+    },
+    { onConflict: 'email' },
+  )
+
+  if (erroreAdmin) {
+    logger.error('admin.demo_riga_non_creata', { error: erroreAdmin })
+    redirect('/admin/accesso?errore=demo-non-riuscita')
+  }
+
+  // --- 3. Il codice, senza passare dalla posta -----------------------------
+  const { data: collegamento, error: erroreCodice } = await servizio.auth.admin.generateLink({
+    type: 'magiclink',
+    email,
+  })
+
+  const codice = collegamento?.properties?.email_otp
+
+  if (erroreCodice || !codice) {
+    logger.error('admin.demo_codice_non_generato', { error: erroreCodice })
+    redirect('/admin/accesso?errore=demo-non-riuscita')
+  }
+
+  // --- 4. La sessione ------------------------------------------------------
+  // Sul client SSR e non su quello di servizio: è questo che scrive i cookie
+  // di sessione nella risposta.
+  const sb = await createServerSupabase()
+
+  // 'email' e non 'magiclink': il tipo `magiclink` è deprecato in supabase-js e
+  // 'email' copre sia il primo accesso sia i successivi.
+  const { error: erroreVerifica } = await sb.auth.verifyOtp({ email, token: codice, type: 'email' })
+
+  if (erroreVerifica) {
+    logger.error('admin.demo_verifica_fallita', { error: erroreVerifica })
+    redirect('/admin/accesso?errore=demo-non-riuscita')
+  }
+
+  const esito = await collegaAdminCorrente()
+
+  if (esito !== 'collegato') {
+    await sb.auth.signOut()
+    logger.error('admin.demo_collegamento_fallito', { esito })
+    redirect('/admin/accesso?errore=demo-non-riuscita')
+  }
+
+  logger.info('admin.demo_accesso_riuscito')
 
   redirect('/admin')
 }
