@@ -34,6 +34,62 @@ export interface AudioDaTrascrivere {
 }
 
 /**
+ * Estensioni accettate dall'API di trascrizione di OpenAI.
+ *
+ * L'elenco NON è decorativo: l'API guarda l'estensione del nome file, non il
+ * `Content-Type`. Un file perfettamente valido con l'estensione sbagliata viene
+ * respinto con `400 Unsupported file format`.
+ */
+const ESTENSIONI_ACCETTATE = new Set([
+  'flac', 'm4a', 'mp3', 'mp4', 'mpeg', 'mpga', 'ogg', 'wav', 'webm',
+])
+
+/**
+ * Estensioni che indicano un contenitore già accettato, con un altro nome.
+ *
+ * QUESTA RIGA È COSTATA UN VOCALE VERO.
+ * Telegram consegna i messaggi vocali con `file_path` che finisce in **`.oga`**:
+ * è Ogg/Opus, cioè esattamente ciò che l'API sa decodificare, ma quel nome non
+ * è nella sua lista e la richiesta torna `400 Unsupported file format oga`.
+ * Il risultato, in produzione: ogni singolo vocale falliva, e al cittadino
+ * arrivava «non riesco ad ascoltare» — cioè la funzione che PLAN2 §2.1 chiama
+ * «la più utile di tutte» non funzionava per nessuno.
+ *
+ * Si rinomina solo per la chiamata: nell'archivio il file conserva la sua
+ * estensione vera, perché è quella giusta per il file che c'è davvero.
+ */
+const ALIAS_ESTENSIONE: Record<string, string> = {
+  oga: 'ogg',
+  opus: 'ogg',
+  mpeg4: 'mp4',
+  m4b: 'm4a',
+}
+
+/**
+ * Il nome da mandare a OpenAI: stessa base, estensione che l'API riconosce.
+ *
+ * Quando l'estensione non è né accettata né traducibile si ripiega su `ogg`
+ * **solo** se il mime type dichiara un contenitore Ogg; altrimenti si lascia il
+ * nome com'è e si lascia decidere all'API. Rinominare alla cieca un formato che
+ * non conosciamo significherebbe chiedere al decodificatore sbagliato di aprire
+ * il file, e l'errore che ne esce è molto più difficile da leggere di un 400.
+ */
+export function nomeFilePerTrascrizione(nomeFile: string, mimeType: string): string {
+  const punto = nomeFile.lastIndexOf('.')
+  const base = punto > 0 ? nomeFile.slice(0, punto) : nomeFile
+  const estensione = punto > 0 ? nomeFile.slice(punto + 1).toLowerCase() : ''
+
+  if (ESTENSIONI_ACCETTATE.has(estensione)) return nomeFile
+
+  const alias = ALIAS_ESTENSIONE[estensione]
+  if (alias) return `${base}.${alias}`
+
+  if (mimeType.toLowerCase().includes('ogg')) return `${base}.ogg`
+
+  return nomeFile
+}
+
+/**
  * Frasi che i modelli di trascrizione producono sul silenzio o sul rumore, e
  * che non sono mai state dette da nessuno. Se la trascrizione è solo questo,
  * vale come vuota: meglio chiedere al cittadino di ripetere che salvare una
@@ -92,7 +148,11 @@ export async function trascriviAudio(audio: AudioDaTrascrivere): Promise<EsitoTr
   const log = logger.child({ report_id: audio.reportId ?? null })
 
   try {
-    const file = await toFile(audio.contenuto, audio.nomeFile, { type: audio.mimeType })
+    // Il nome va normalizzato: l'API sceglie il decodificatore dall'estensione
+    // e rifiuta `.oga`, che è proprio ciò che manda Telegram. Vedi
+    // `nomeFilePerTrascrizione`.
+    const nomePerApi = nomeFilePerTrascrizione(audio.nomeFile, audio.mimeType)
+    const file = await toFile(audio.contenuto, nomePerApi, { type: audio.mimeType })
 
     const risposta = await getOpenAI().audio.transcriptions.create({
       model: MODEL_TRANSCRIBE,
