@@ -603,9 +603,32 @@ export async function POST(req: NextRequest) {
       update_id: update.update_id,
       error: errore,
     })
+
     await inviaMessaggioTelegram(chatId, messaggio('errore', lingua))
-    // 500: Telegram rinvia l'update e la segnalazione ha una seconda occasione.
-    return NextResponse.json({ error: 'errore interno' }, { status: 500 })
+
+    // 200, NON 500 — e la ragione è costata a un cittadino vero una raffica di
+    // messaggi identici.
+    //
+    // Qui c'era un 500, con la buona intenzione di dare alla segnalazione una
+    // seconda occasione: Telegram rinvia l'update finché il webhook non
+    // risponde 2xx. Ma se il guasto è DETERMINISTICO — una chiave sbagliata,
+    // una migrazione non applicata, un bucket che non esiste — il tentativo
+    // successivo fallisce esattamente come il primo. E siccome poche righe più
+    // su avevamo già scritto alla persona, ogni rinvio le rimandava lo stesso
+    // «qualcosa non ha funzionato». Un ciclo infinito, addosso a chi si stava
+    // fidando: non un fastidio, il modo più rapido di farsi bloccare il bot.
+    //
+    // La regola generale: **se abbiamo già risposto al cittadino, l'update è
+    // consumato**. Rispondere 500 dopo aver scritto significa chiedere a
+    // Telegram di far ripetere il messaggio a noi e alla persona.
+    // Il 500 resta legittimo solo nei rami che falliscono PRIMA di aver detto
+    // qualcosa: lì il rinvio è silenzioso e utile.
+    //
+    // La rete per non perdere la segnalazione non è il rinvio di Telegram: è
+    // `/api/cron/rescue-reports`, che ripesca ciò che è rimasto in `nuovo`. Se
+    // il guasto capita prima ancora dell'insert, la segnalazione è persa
+    // comunque — e il rinvio non l'avrebbe salvata, perché avrebbe rifallito.
+    return NextResponse.json({ ok: true })
   }
 }
 
