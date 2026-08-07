@@ -11,6 +11,61 @@ import {
 import { getSoglie } from '@/lib/config/thresholds'
 import { valutaBrigading } from '@/lib/security/brigading'
 
+/**
+ * Sceglie come si scrive il nome di un luogo, fra le grafie dei cittadini.
+ *
+ * Serve da quando il confronto passa da `chiave_luogo()` (migrazione 0013): un
+ * gruppo può ora contenere «Castel San Pietro Terme», «castel san pietro terme»
+ * e «CASTEL SAN PIETRO TERME (BO)» insieme, che è il punto. Ma il nome del
+ * gruppo è quello che un cittadino legge in pagina e che finisce nell'
+ * intestazione di un esposto, e prendere la grafia della prima segnalazione
+ * capitata lo rendeva una lotteria.
+ *
+ * Il criterio, in ordine: vince la forma più diffusa fra chi ha segnalato; a
+ * parità, quella scritta come si scrive un nome proprio — né tutta maiuscola né
+ * tutta minuscola. La sigla di provincia in coda si toglie sempre: «(BO)» non
+ * fa parte del nome del comune.
+ *
+ * Non normalizza e non corregge: sceglie fra ciò che le persone hanno scritto.
+ * Inventare una grafia che nessuno ha usato è come inventare un indirizzo.
+ */
+export function nomeLuogoPiuComune(valori: (string | null | undefined)[]): string | null {
+  const forme = valori
+    .map((v) => (v ?? '').replace(/\s*\([^)]*\)\s*$/, '').replace(/\s+/g, ' ').trim())
+    .filter((v) => v.length > 0)
+
+  if (forme.length === 0) return null
+
+  // Si raggruppa sulla stessa chiave usata dal database, altrimenti qui
+  // dentro «Milano» e «milano» tornerebbero a essere due luoghi diversi.
+  const perChiave = new Map<string, string[]>()
+  for (const forma of forme) {
+    const chiave = forma.toLowerCase()
+    perChiave.set(chiave, [...(perChiave.get(chiave) ?? []), forma])
+  }
+
+  const vincente = [...perChiave.values()].sort((a, b) => b.length - a.length)[0]!
+
+  /** Meglio «Castel San Pietro» che «CASTEL SAN PIETRO» o «castel san pietro». */
+  const qualita = (forma: string) => {
+    const haMaiuscoleEMinuscole = /[a-zà-ù]/.test(forma) && /[A-ZÀ-Ù]/.test(forma)
+    const iniziaMaiuscolo = /^[A-ZÀ-Ù]/.test(forma)
+    return (haMaiuscoleEMinuscole ? 2 : 0) + (iniziaMaiuscolo ? 1 : 0)
+  }
+
+  const conteggi = new Map<string, number>()
+  for (const forma of vincente) conteggi.set(forma, (conteggi.get(forma) ?? 0) + 1)
+
+  return [...conteggi.entries()].sort(
+    (a, b) =>
+      qualita(b[0]) - qualita(a[0]) ||
+      b[1] - a[1] ||
+      // Ultimo criterio solo per rendere la scelta ripetibile: due esecuzioni
+      // sugli stessi dati devono dare lo stesso nome.
+      a[0].localeCompare(b[0], 'it'),
+  )[0]![0]
+}
+
 export interface ReclusterResult {
   esaminati: number
   gruppiCreati: number
@@ -104,7 +159,7 @@ export async function ricostruisciGruppi(): Promise<ReclusterResult> {
     // --- Titolo e riassunto ------------------------------------------------
     const { data: testi } = await sb
       .from('reports')
-      .select('anon_text, created_at, location_hint')
+      .select('anon_text, created_at, location_hint, city, neighborhood')
       .in('id', ids)
       .limit(50)
 
@@ -142,14 +197,24 @@ export async function ricostruisciGruppi(): Promise<ReclusterResult> {
     })
 
     // --- Creazione del gruppo ---------------------------------------------
+    // Il nome del luogo si sceglie fra TUTTE le segnalazioni del gruppo, non si
+    // prende da `orfana`: da quando il confronto passa dalla chiave normalizzata
+    // le grafie nel gruppo possono essere diverse, e quella della segnalazione
+    // capitata per prima non ha nessun titolo per vincere.
+    const citta = nomeLuogoPiuComune([orfana.city, ...(testi ?? []).map((t) => t.city)])
+    const quartiere = nomeLuogoPiuComune([
+      orfana.neighborhood,
+      ...(testi ?? []).map((t) => t.neighborhood),
+    ])
+
     const { data: gruppo, error: erroreGruppo } = await sb
       .from('clusters')
       .insert({
         title: riassunto.title,
         summary: riassunto.summary,
         category: orfana.category ?? 'altro',
-        city: orfana.city ?? 'non indicata',
-        neighborhood: orfana.neighborhood,
+        city: citta ?? 'non indicata',
+        neighborhood: quartiere,
       })
       .select('id')
       .single()
